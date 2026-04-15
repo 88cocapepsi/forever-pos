@@ -48,6 +48,7 @@ const money = (v) =>
   new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
+    maximumFractionDigits: 0,
   }).format(v || 0);
 
 const formatTime = (v) => new Date(v).toLocaleString("vi-VN");
@@ -420,123 +421,164 @@ export default function App() {
   };
 
   const buildBillHtml = (bill) => {
-    const itemsHtml = (bill.items || [])
+    const billCode = bill?.billCode || `TAM-${Date.now()}`;
+    const billTable = bill?.table || selectedTable;
+    const billTime = bill?.billTime || new Date().toISOString();
+    const billShift = bill?.shiftId || currentShift;
+    const billCashier = bill?.cashierName || user?.fullName || "";
+    const billItems = Array.isArray(bill?.items) ? bill.items : [];
+    const billTotal = Number(
+      bill?.totalPrice ??
+        bill?.total ??
+        billItems.reduce(
+          (sum, item) => sum + Number(item.qty || 0) * Number(item.price || 0),
+          0
+        )
+    );
+
+    const shiftName =
+      SHIFTS.find((s) => s.id === billShift)?.name || billShift || "";
+
+    const itemsHtml = billItems
       .map(
         (item) => `
           <tr>
             <td class="left">
-              ${item.name}
-              <div class="sub">${money(item.price)} x ${item.qty}</div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-sub">${money(item.price)} x ${item.qty}</div>
             </td>
-            <td class="right">${money(item.price * item.qty)}</td>
+            <td class="right">${money(Number(item.price || 0) * Number(item.qty || 0))}</td>
           </tr>
         `
       )
       .join("");
-
-    const shiftName =
-      SHIFTS.find((s) => s.id === bill.shiftId)?.name || bill.shiftId || "";
 
     return `
       <!doctype html>
       <html>
         <head>
           <meta charset="utf-8" />
-          <title>Hóa đơn</title>
+          <title>Hóa đơn ${billCode}</title>
           <style>
-            * { box-sizing: border-box; }
-            body {
-              font-family: Arial, Helvetica, sans-serif;
+            * {
+              box-sizing: border-box;
+            }
+
+            html, body {
               margin: 0;
               padding: 0;
               background: #fff;
               color: #000;
+              font-family: Arial, Helvetica, sans-serif;
             }
+
+            body {
+              width: 58mm;
+              font-size: 11px;
+              line-height: 1.35;
+              padding: 4mm 3mm;
+            }
+
             .bill {
-              width: 80mm;
-              padding: 8px;
-              margin: 0 auto;
+              width: 100%;
             }
-            .center { text-align: center; }
-            .title {
-              font-size: 20px;
+
+            .center {
+              text-align: center;
+            }
+
+            .shop-name {
+              font-size: 16px;
               font-weight: 800;
+              line-height: 1.2;
               margin-bottom: 4px;
             }
-            .subline {
-              font-size: 12px;
-              line-height: 1.4;
-              margin: 2px 0;
+
+            .shop-sub {
+              font-size: 11px;
+              line-height: 1.35;
             }
+
             .line {
               border-top: 1px dashed #000;
-              margin: 8px 0;
+              margin: 6px 0;
             }
+
             .meta {
-              font-size: 12px;
-              line-height: 1.5;
+              font-size: 11px;
+              line-height: 1.45;
             }
+
+            .meta-row {
+              display: flex;
+              justify-content: space-between;
+              gap: 8px;
+            }
+
             table {
               width: 100%;
               border-collapse: collapse;
-              font-size: 12px;
+              font-size: 11px;
             }
+
             td {
+              padding: 3px 0;
               vertical-align: top;
-              padding: 4px 0;
             }
-            .left { width: 65%; }
+
+            .left {
+              width: 68%;
+            }
+
             .right {
-              width: 35%;
+              width: 32%;
               text-align: right;
               white-space: nowrap;
             }
-            .sub {
-              font-size: 11px;
-              color: #444;
-              margin-top: 2px;
+
+            .item-name {
+              font-weight: 700;
             }
+
+            .item-sub {
+              font-size: 10px;
+            }
+
             .total-row td {
-              font-size: 15px;
+              padding-top: 6px;
+              font-size: 14px;
               font-weight: 800;
-              padding-top: 8px;
             }
-            .thankyou {
+
+            .footer {
               text-align: center;
-              font-size: 12px;
-              margin-top: 10px;
+              margin-top: 8px;
+              font-size: 11px;
               line-height: 1.5;
             }
+
             @page {
-              size: 80mm auto;
+              size: 58mm auto;
               margin: 0;
-            }
-            @media print {
-              body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
             }
           </style>
         </head>
         <body onload="window.print(); window.onafterprint = () => window.close();">
           <div class="bill">
             <div class="center">
-              <div class="title">FOREVER Coffee & Beer</div>
-              <div class="subline">B38 Đường 4A, P. Tân Hưng, Q.7</div>
-              <div class="subline">Hotline: 07088880891</div>
+              <div class="shop-name">FOREVER Coffee & Beer</div>
+              <div class="shop-sub">B38 Đường 4A, P. Tân Hưng, Q.7</div>
+              <div class="shop-sub">Hotline: 07088880891</div>
             </div>
 
             <div class="line"></div>
 
             <div class="meta">
-              <div>Mã bill: <strong>${bill.billCode || ""}</strong></div>
-              <div>Bàn: <strong>${bill.table || ""}</strong></div>
-              <div>Ca: <strong>${shiftName}</strong></div>
-              <div>Thu ngân: <strong>${bill.cashierName || user?.fullName || ""}</strong></div>
-              <div>Thời gian: <strong>${formatTime(
-                bill.billTime || new Date().toISOString()
-              )}</strong></div>
+              <div><strong>Mã bill:</strong> ${billCode}</div>
+              <div><strong>Bàn:</strong> ${billTable}</div>
+              <div><strong>Ca:</strong> ${shiftName}</div>
+              <div><strong>Thu ngân:</strong> ${billCashier}</div>
+              <div><strong>Thời gian:</strong> ${formatTime(billTime)}</div>
             </div>
 
             <div class="line"></div>
@@ -546,14 +588,14 @@ export default function App() {
                 ${itemsHtml}
                 <tr class="total-row">
                   <td>TỔNG</td>
-                  <td class="right">${money(bill.totalPrice || 0)}</td>
+                  <td class="right">${money(billTotal)}</td>
                 </tr>
               </tbody>
             </table>
 
             <div class="line"></div>
 
-            <div class="thankyou">
+            <div class="footer">
               Cảm ơn quý khách<br/>
               Hẹn gặp lại!
             </div>
@@ -564,78 +606,21 @@ export default function App() {
   };
 
   const printBill = (bill) => {
-  const win = window.open('', '_blank');
+    const printWindow = window.open(
+      "",
+      "_blank",
+      "width=420,height=720,noopener,noreferrer"
+    );
 
-  const html = `
-    <html>
-      <head>
-        <title>Hóa đơn</title>
-        <style>
-          body {
-            font-family: Arial;
-            padding: 10px;
-            width: 300px;
-          }
-          h2 {
-            text-align: center;
-          }
-          .center {
-            text-align: center;
-          }
-          .line {
-            border-top: 1px dashed #000;
-            margin: 8px 0;
-          }
-          .row {
-            display: flex;
-            justify-content: space-between;
-            margin: 4px 0;
-          }
-          .total {
-            font-weight: bold;
-            font-size: 18px;
-          }
-        </style>
-      </head>
+    if (!printWindow) {
+      alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup rồi thử lại.");
+      return;
+    }
 
-      <body onload="window.print(); window.close();">
-
-        <h2>FOREVER Coffee & Beer</h2>
-        <div class="center">B38 Đường 4A, Q7</div>
-
-        <div class="line"></div>
-
-        <div>Mã bill: ${bill.id}</div>
-        <div>Bàn: ${bill.table}</div>
-        <div>Thời gian: ${new Date().toLocaleString()}</div>
-
-        <div class="line"></div>
-
-        ${bill.items.map(item => `
-          <div class="row">
-            <span>${item.name} x${item.qty}</span>
-            <span>${item.price * item.qty}đ</span>
-          </div>
-        `).join('')}
-
-        <div class="line"></div>
-
-        <div class="row total">
-          <span>Tổng:</span>
-          <span>${bill.total}đ</span>
-        </div>
-
-        <div class="line"></div>
-
-        <div class="center">Cảm ơn quý khách ❤️</div>
-
-      </body>
-    </html>
-  `;
-
-  win.document.write(html);
-  win.document.close();
-};
+    printWindow.document.open();
+    printWindow.document.write(buildBillHtml(bill));
+    printWindow.document.close();
+  };
 
   const checkout = async () => {
     if (!order.items || !order.items.length) {
@@ -659,7 +644,7 @@ export default function App() {
 
   const handlePrintCurrentBill = () => {
     if (!order.items || !order.items.length) {
-      return alert("Bàn này chưa có món để in tạm tính");
+      return alert("Bàn này chưa có món để in");
     }
 
     const tempBill = {
