@@ -564,21 +564,78 @@ export default function App() {
   };
 
   const printBill = (bill) => {
-    const printWindow = window.open(
-      "",
-      "_blank",
-      "width=420,height=720,noopener,noreferrer"
-    );
+  const win = window.open('', '_blank');
 
-    if (!printWindow) {
-      alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup rồi thử lại.");
-      return;
-    }
+  const html = `
+    <html>
+      <head>
+        <title>Hóa đơn</title>
+        <style>
+          body {
+            font-family: Arial;
+            padding: 10px;
+            width: 300px;
+          }
+          h2 {
+            text-align: center;
+          }
+          .center {
+            text-align: center;
+          }
+          .line {
+            border-top: 1px dashed #000;
+            margin: 8px 0;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+          }
+          .total {
+            font-weight: bold;
+            font-size: 18px;
+          }
+        </style>
+      </head>
 
-    printWindow.document.open();
-    printWindow.document.write(buildBillHtml(bill));
-    printWindow.document.close();
-  };
+      <body onload="window.print(); window.close();">
+
+        <h2>FOREVER Coffee & Beer</h2>
+        <div class="center">B38 Đường 4A, Q7</div>
+
+        <div class="line"></div>
+
+        <div>Mã bill: ${bill.id}</div>
+        <div>Bàn: ${bill.table}</div>
+        <div>Thời gian: ${new Date().toLocaleString()}</div>
+
+        <div class="line"></div>
+
+        ${bill.items.map(item => `
+          <div class="row">
+            <span>${item.name} x${item.qty}</span>
+            <span>${item.price * item.qty}đ</span>
+          </div>
+        `).join('')}
+
+        <div class="line"></div>
+
+        <div class="row total">
+          <span>Tổng:</span>
+          <span>${bill.total}đ</span>
+        </div>
+
+        <div class="line"></div>
+
+        <div class="center">Cảm ơn quý khách ❤️</div>
+
+      </body>
+    </html>
+  `;
+
+  win.document.write(html);
+  win.document.close();
+};
 
   const checkout = async () => {
     if (!order.items || !order.items.length) {
