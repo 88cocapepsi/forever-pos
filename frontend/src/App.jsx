@@ -164,15 +164,6 @@ function LoginScreen({ onLogin }) {
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
-
-        <div className="demo-box">
-          <div>
-            <strong>Admin:</strong> admin / 123456
-          </div>
-          <div>
-            <strong>Thu ngân:</strong> thungan / 123456
-          </div>
-        </div>
       </div>
     </div>
   );
