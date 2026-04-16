@@ -424,21 +424,6 @@ export default function App() {
     await refreshOrdersAndReport();
   };
 
-  const openPrintWindow = () => {
-    const w = window.open(
-      "",
-      "_blank",
-      "width=420,height=720,noopener,noreferrer"
-    );
-
-    if (!w) {
-      alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup rồi thử lại.");
-      return null;
-    }
-
-    return w;
-  };
-
   const buildBillHtml = (bill) => {
     const billCode = bill?.billCode || `TAM-${Date.now()}`;
     const billTable = bill?.table || selectedTable;
@@ -549,7 +534,7 @@ export default function App() {
             }
           </style>
         </head>
-        <body onload="window.print(); window.onafterprint = () => window.close();">
+        <body>
           <div class="bill">
             <div class="center">
               <div class="shop-name">FOREVER Coffee & Beer</div>
@@ -591,13 +576,37 @@ export default function App() {
     `;
   };
 
-  const printBill = (bill, printWindow = null) => {
-    const w = printWindow || openPrintWindow();
-    if (!w) return;
+  const printBill = (bill) => {
+    const html = buildBillHtml(bill);
 
-    w.document.open();
-    w.document.write(buildBillHtml(bill));
-    w.document.close();
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {}
+        }, 1000);
+      }, 250);
+    };
   };
 
   const handlePrintCurrentBill = () => {
@@ -623,9 +632,6 @@ export default function App() {
       return alert("Bàn này chưa có món");
     }
 
-    const printWindow = openPrintWindow();
-    if (!printWindow) return;
-
     try {
       const bill = await api("/api/checkout", {
         method: "POST",
@@ -637,16 +643,13 @@ export default function App() {
       });
 
       await refreshOrdersAndReport();
-      printBill(bill, printWindow);
+      printBill(bill);
       pushToast(
         "Thanh toán thành công",
         `${bill.table} - ${money(bill.totalPrice)}`
       );
       setTab("reports");
     } catch (err) {
-      try {
-        printWindow.close();
-      } catch {}
       alert(err.message || "Thanh toán thất bại");
     }
   };
