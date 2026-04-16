@@ -1,0 +1,92 @@
+{
+  "shop": {
+    "name": "FOREVER Coffee & Beer",
+    "address": "B38 Đường 4A, P. Tân Hưng, Q.7",
+    "printerName": "Máy in bill / trình duyệt"
+  },
+  "users": [
+    {
+      "id": "u1",
+      "fullName": "Quản lý",
+      "username": "admin",
+      "passwordHash": "",
+      "role": "admin",
+      "createdAt": "seed"
+    },
+    {
+      "id": "u2",
+      "fullName": "Thu ngân",
+      "username": "thungan",
+      "passwordHash": "",
+      "role": "cashier",
+      "createdAt": "seed"
+    }
+  ],
+  "menu": [
+    {
+      "id": "m1",
+      "name": "Cà phê sữa",
+      "price": 25000,
+      "category": "Cà phê",
+      "active": true
+    },
+    {
+      "id": "m2",
+      "name": "Cà phê đen",
+      "price": 22000,
+      "category": "Cà phê",
+      "active": true
+    },
+    {
+      "id": "m3",
+      "name": "Bạc xỉu",
+      "price": 30000,
+      "category": "Cà phê",
+      "active": true
+    },
+    {
+      "id": "m4",
+      "name": "Latte",
+      "price": 35000,
+      "category": "Cà phê",
+      "active": true
+    },
+    {
+      "id": "m5",
+      "name": "Trà đào",
+      "price": 32000,
+      "category": "Trà",
+      "active": true
+    },
+    {
+      "id": "m6",
+      "name": "Trà vải",
+      "price": 32000,
+      "category": "Trà",
+      "active": true
+    },
+    {
+      "id": "m7",
+      "name": "Yaourt đá",
+      "price": 30000,
+      "category": "Khác",
+      "active": true
+    },
+    {
+      "id": "m8",
+      "name": "Cacao đá",
+      "price": 35000,
+      "category": "Khác",
+      "active": true
+    },
+    {
+      "id": "m9",
+      "name": "Mojito bạc hà",
+      "price": 38000,
+      "category": "Soda",
+      "active": true
+    }
+  ],
+  "orders": {},
+  "bills": []
+}
