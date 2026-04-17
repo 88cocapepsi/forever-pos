@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 
 const API_URL = "https://forever-pos.onrender.com";
 
+const STORE_INFO = {
+  name: "FOREVER COFFEE & BEER",
+  address1: "B38 đường 4A",
+  address2: "P. Tân Hưng, Q.7",
+  phone: "0788880891",
+};
+
 const TABLES = [
   "Bàn 1",
   "Bàn 2",
@@ -18,18 +25,321 @@ const TABLES = [
 ];
 
 const MENU_ITEMS = [
-  { id: 1, name: "Cà phê đen đá", price: 25000, category: "Cà phê" },
-  { id: 2, name: "Cà phê sữa đá", price: 30000, category: "Cà phê" },
-  { id: 3, name: "Bạc xỉu", price: 35000, category: "Cà phê" },
-  { id: 4, name: "Trà đào", price: 35000, category: "Trà" },
-  { id: 5, name: "Trà tắc", price: 30000, category: "Trà" },
-  { id: 6, name: "Trà sữa", price: 40000, category: "Trà sữa" },
-  { id: 7, name: "Cacao đá", price: 38000, category: "Đá xay" },
-  { id: 8, name: "Yaourt đá", price: 32000, category: "Khác" },
+  {
+    id: "cf_den",
+    name: "Cà phê đen đá",
+    price: 25000,
+    category: "Cà phê",
+    recipe: [
+      { sku: "cf_hat", qty: 18, unit: "g" },
+      { sku: "duong", qty: 8, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "cf_sua",
+    name: "Cà phê sữa đá",
+    price: 30000,
+    category: "Cà phê",
+    recipe: [
+      { sku: "cf_hat", qty: 18, unit: "g" },
+      { sku: "sua_dac", qty: 25, unit: "ml" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "bac_xiu",
+    name: "Bạc xỉu",
+    price: 35000,
+    category: "Cà phê",
+    recipe: [
+      { sku: "cf_hat", qty: 10, unit: "g" },
+      { sku: "sua_dac", qty: 35, unit: "ml" },
+      { sku: "sua_tuoi", qty: 80, unit: "ml" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "tra_dao",
+    name: "Trà đào",
+    price: 35000,
+    category: "Trà",
+    recipe: [
+      { sku: "tra_nen", qty: 12, unit: "g" },
+      { sku: "dao_ngam", qty: 40, unit: "g" },
+      { sku: "duong", qty: 12, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "tra_tac",
+    name: "Trà tắc",
+    price: 30000,
+    category: "Trà",
+    recipe: [
+      { sku: "tra_nen", qty: 12, unit: "g" },
+      { sku: "tac", qty: 25, unit: "ml" },
+      { sku: "duong", qty: 12, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "tra_sua",
+    name: "Trà sữa",
+    price: 40000,
+    category: "Trà sữa",
+    recipe: [
+      { sku: "tra_nen", qty: 12, unit: "g" },
+      { sku: "bot_sua", qty: 30, unit: "g" },
+      { sku: "duong", qty: 15, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "cacao_da",
+    name: "Cacao đá",
+    price: 38000,
+    category: "Đá xay",
+    recipe: [
+      { sku: "bot_cacao", qty: 22, unit: "g" },
+      { sku: "sua_tuoi", qty: 100, unit: "ml" },
+      { sku: "duong", qty: 10, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "yaourt_da",
+    name: "Yaourt đá",
+    price: 32000,
+    category: "Khác",
+    recipe: [
+      { sku: "yaourt", qty: 1, unit: "hũ" },
+      { sku: "duong", qty: 8, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+  {
+    id: "yaourt_vai",
+    name: "Yaourt vải",
+    price: 28000,
+    category: "Khác",
+    recipe: [
+      { sku: "yaourt", qty: 1, unit: "hũ" },
+      { sku: "vai_ngam", qty: 35, unit: "g" },
+      { sku: "da_vien", qty: 1, unit: "ly" },
+    ],
+  },
+];
+
+const INITIAL_INVENTORY = [
+  { sku: "cf_hat", name: "Cà phê hạt", stock: 5000, unit: "g", cost: 0 },
+  { sku: "tra_nen", name: "Trà nền", stock: 3000, unit: "g", cost: 0 },
+  { sku: "duong", name: "Đường", stock: 4000, unit: "g", cost: 0 },
+  { sku: "sua_dac", name: "Sữa đặc", stock: 3000, unit: "ml", cost: 0 },
+  { sku: "sua_tuoi", name: "Sữa tươi", stock: 5000, unit: "ml", cost: 0 },
+  { sku: "bot_sua", name: "Bột sữa", stock: 2000, unit: "g", cost: 0 },
+  { sku: "bot_cacao", name: "Bột cacao", stock: 1500, unit: "g", cost: 0 },
+  { sku: "dao_ngam", name: "Đào ngâm", stock: 2000, unit: "g", cost: 0 },
+  { sku: "vai_ngam", name: "Vải ngâm", stock: 1500, unit: "g", cost: 0 },
+  { sku: "tac", name: "Nước tắc", stock: 1200, unit: "ml", cost: 0 },
+  { sku: "yaourt", name: "Yaourt", stock: 100, unit: "hũ", cost: 0 },
+  { sku: "da_vien", name: "Đá viên", stock: 300, unit: "ly", cost: 0 },
 ];
 
 const formatMoney = (value) =>
-  new Intl.NumberFormat("vi-VN").format(value || 0) + " đ";
+  new Intl.NumberFormat("vi-VN").format(Number(value || 0));
+
+const formatMoneyWithVND = (value) => `${formatMoney(value)} đ`;
+
+const formatDateTime = (date = new Date()) => {
+  const d = new Date(date);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+};
+
+const generateReceiptCode = () => {
+  return `HD${Date.now().toString().slice(-6)}`;
+};
+
+const generateTamTinhCode = () => {
+  return `${Math.floor(100 + Math.random() * 900)}-${Math.floor(
+    100 + Math.random() * 900
+  )}`;
+};
+
+const getStorage = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const saveStorage = (key, value) => {
+  localStorage.setItem(key, JSON.stringify(value));
+};
+
+function buildPrintHTML({
+  type = "sale",
+  tableName,
+  sellerName,
+  customerName = "Khách lẻ",
+  items = [],
+  subtotal = 0,
+  discount = 0,
+  total = 0,
+  createdAt = new Date(),
+}) {
+  const title = type === "temp" ? "PHIẾU TẠM TÍNH" : "HÓA ĐƠN BÁN HÀNG";
+  const code = type === "temp" ? generateTamTinhCode() : generateReceiptCode();
+
+  const rowsHTML = items
+    .map(
+      (item) => `
+      <div class="item-name">${item.name}</div>
+      <div class="item-row">
+        <div>${formatMoney(item.price)}</div>
+        <div>${item.qty}</div>
+        <div>${formatMoney(item.qty * item.price)}</div>
+      </div>
+    `
+    )
+    .join("");
+
+  return `
+  <html>
+    <head>
+      <title>${title}</title>
+      <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          width: 76mm;
+          margin: 0 auto;
+          padding: 8px 6px 18px;
+          color: #000;
+          font-size: 13px;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: 700; }
+        .big { font-size: 18px; }
+        .mt8 { margin-top: 8px; }
+        .mt10 { margin-top: 10px; }
+        .mt14 { margin-top: 14px; }
+        .line {
+          border-top: 1px dashed #000;
+          margin: 10px 0;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 8px;
+          margin: 2px 0;
+        }
+        .item-header,
+        .item-row {
+          display: grid;
+          grid-template-columns: 1fr 40px 1fr;
+          gap: 6px;
+          align-items: center;
+        }
+        .item-header div:nth-child(2),
+        .item-row div:nth-child(2) {
+          text-align: center;
+        }
+        .item-header div:nth-child(3),
+        .item-row div:nth-child(3) {
+          text-align: right;
+        }
+        .item-name {
+          margin: 8px 0 2px;
+        }
+        .summary {
+          margin-top: 8px;
+        }
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          margin: 3px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="center bold">${STORE_INFO.name}</div>
+      <div class="center">Đ/C: ${STORE_INFO.address1}</div>
+      <div class="center">${STORE_INFO.address2}</div>
+      <div class="center">Điện thoại: ${STORE_INFO.phone}</div>
+
+      <div class="line"></div>
+
+      ${
+        type === "temp"
+          ? `
+            <div>Ngày bán: ${formatDateTime(createdAt)}</div>
+            <div class="center bold big mt8">${title}</div>
+            <div class="center bold">${code}</div>
+            <div class="mt10">Phòng bàn: ${tableName}</div>
+            <div>Giờ vào: ${formatDateTime(createdAt)}</div>
+            <div>Khách hàng: ${customerName}</div>
+            <div class="bold">Người bán: ${sellerName}</div>
+          `
+          : `
+            <div>Liên số: Liên 1</div>
+            <div>Ngày bán: ${formatDateTime(createdAt)}</div>
+            <div class="center bold big mt8">${title}</div>
+            <div class="center bold">${code}</div>
+            <div class="mt10"><span class="bold">Khách hàng:</span> ${customerName}</div>
+            <div>Địa chỉ:</div>
+            <div>Khu vực:</div>
+            <div>Thời gian giao hàng:</div>
+            <div>Điện thoại:</div>
+            <div class="bold">Người bán: ${sellerName}</div>
+          `
+      }
+
+      <div class="line"></div>
+
+      <div class="item-header bold">
+        <div>Đơn giá</div>
+        <div>SL</div>
+        <div>Thành tiền</div>
+      </div>
+
+      ${rowsHTML}
+
+      <div class="line"></div>
+
+      <div class="summary">
+        <div class="summary-row">
+          <div>Tổng tiền hàng:</div>
+          <div>${formatMoney(subtotal)}</div>
+        </div>
+        <div class="summary-row">
+          <div>Chiết khấu:</div>
+          <div>${formatMoney(discount)}</div>
+        </div>
+        <div class="summary-row bold">
+          <div>Tổng cộng:</div>
+          <div>${formatMoney(total)}</div>
+        </div>
+      </div>
+
+      <div class="mt14 center">${STORE_INFO.name}</div>
+      <div class="center">${STORE_INFO.address1} - ${STORE_INFO.address2}</div>
+      <div class="center">Điện thoại: ${STORE_INFO.phone}</div>
+
+      <script>
+        window.onload = function() {
+          window.print();
+          setTimeout(() => window.close(), 500);
+        };
+      </script>
+    </body>
+  </html>
+  `;
+}
 
 export default function App() {
   const [username, setUsername] = useState("admin");
@@ -40,9 +350,28 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState("banhang");
   const [selectedTable, setSelectedTable] = useState("Bàn 1");
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem("forever_pos_orders");
-    return saved ? JSON.parse(saved) : {};
+  const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+
+  const [orders, setOrders] = useState(() =>
+    getStorage("forever_pos_orders", {})
+  );
+  const [inventory, setInventory] = useState(() =>
+    getStorage("forever_pos_inventory", INITIAL_INVENTORY)
+  );
+  const [stockLogs, setStockLogs] = useState(() =>
+    getStorage("forever_pos_stock_logs", [])
+  );
+  const [paymentLogs, setPaymentLogs] = useState(() =>
+    getStorage("forever_pos_payment_logs", [])
+  );
+  const [notifications, setNotifications] = useState([]);
+  const [customerName, setCustomerName] = useState("Khách lẻ");
+  const [discount, setDiscount] = useState(0);
+
+  const [stockForm, setStockForm] = useState({
+    sku: INITIAL_INVENTORY[0].sku,
+    qty: "",
+    cost: "",
   });
 
   useEffect(() => {
@@ -56,15 +385,96 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("forever_pos_orders", JSON.stringify(orders));
-  }, [orders]);
+  useEffect(() => saveStorage("forever_pos_orders", orders), [orders]);
+  useEffect(() => saveStorage("forever_pos_inventory", inventory), [inventory]);
+  useEffect(() => saveStorage("forever_pos_stock_logs", stockLogs), [stockLogs]);
+  useEffect(
+    () => saveStorage("forever_pos_payment_logs", paymentLogs),
+    [paymentLogs]
+  );
+
+  const categories = useMemo(
+    () => ["Tất cả", ...Array.from(new Set(MENU_ITEMS.map((i) => i.category)))],
+    []
+  );
+
+  const filteredMenu = useMemo(() => {
+    if (selectedCategory === "Tất cả") return MENU_ITEMS;
+    return MENU_ITEMS.filter((item) => item.category === selectedCategory);
+  }, [selectedCategory]);
 
   const currentOrder = orders[selectedTable] || [];
 
-  const totalAmount = useMemo(() => {
+  const subtotal = useMemo(() => {
     return currentOrder.reduce((sum, item) => sum + item.price * item.qty, 0);
   }, [currentOrder]);
+
+  const total = useMemo(() => {
+    return Math.max(0, subtotal - Number(discount || 0));
+  }, [subtotal, discount]);
+
+  const activeTablesCount = useMemo(() => {
+    return Object.values(orders).filter((items) => items && items.length > 0).length;
+  }, [orders]);
+
+  const totalOpenItems = useMemo(() => {
+    return Object.values(orders)
+      .flat()
+      .reduce((sum, item) => sum + item.qty, 0);
+  }, [orders]);
+
+  const lowStockItems = useMemo(() => {
+    return inventory.filter((item) => Number(item.stock) <= 10);
+  }, [inventory]);
+
+  const notify = (message, type = "success") => {
+    const id = Date.now() + Math.random();
+    const item = { id, message, type };
+    setNotifications((prev) => [item, ...prev.slice(0, 3)]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 3000);
+  };
+
+  const getInventoryItem = (sku) => inventory.find((item) => item.sku === sku);
+
+  const getTableItemCount = (tableName) => {
+    return (orders[tableName] || []).reduce((sum, item) => sum + item.qty, 0);
+  };
+
+  const getRequiredIngredients = (orderItems) => {
+    const usageMap = {};
+
+    orderItems.forEach((orderItem) => {
+      const menu = MENU_ITEMS.find((m) => m.id === orderItem.id);
+      if (!menu || !menu.recipe) return;
+
+      menu.recipe.forEach((recipeItem) => {
+        if (!usageMap[recipeItem.sku]) {
+          usageMap[recipeItem.sku] = 0;
+        }
+        usageMap[recipeItem.sku] += recipeItem.qty * orderItem.qty;
+      });
+    });
+
+    return usageMap;
+  };
+
+  const canCheckout = () => {
+    const required = getRequiredIngredients(currentOrder);
+
+    for (const [sku, neededQty] of Object.entries(required)) {
+      const stockItem = getInventoryItem(sku);
+      if (!stockItem || Number(stockItem.stock) < neededQty) {
+        return {
+          ok: false,
+          message: `Không đủ tồn kho: ${stockItem?.name || sku}`,
+        };
+      }
+    }
+
+    return { ok: true };
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -89,7 +499,7 @@ export default function App() {
       localStorage.setItem("forever_pos_token", data.token || "");
       localStorage.setItem("forever_pos_user", JSON.stringify(data.user || {}));
       setLoggedInUser(data.user || null);
-      setError("");
+      notify("Đăng nhập thành công", "success");
     } catch (err) {
       setError(err.message || "Failed to fetch");
     } finally {
@@ -143,41 +553,168 @@ export default function App() {
     });
   };
 
-  const clearTableOrder = () => {
+  const clearCurrentOrder = () => {
     setOrders((prev) => ({
       ...prev,
       [selectedTable]: [],
     }));
+    setDiscount(0);
+    setCustomerName("Khách lẻ");
+    notify(`Đã xóa đơn của ${selectedTable}`, "info");
   };
 
-  const handlePrintBill = () => {
+  const printReceipt = (type = "sale") => {
     if (!currentOrder.length) {
-      alert("Bàn này chưa có món để in bill.");
+      notify("Bàn này chưa có món để in", "warning");
       return;
     }
 
-    const lines = currentOrder
-      .map(
-        (item) =>
-          `${item.name} x${item.qty} - ${formatMoney(item.qty * item.price)}`
-      )
-      .join("\\n");
+    const html = buildPrintHTML({
+      type,
+      tableName: selectedTable,
+      sellerName: loggedInUser?.username || "staff",
+      customerName,
+      items: currentOrder,
+      subtotal,
+      discount: Number(discount || 0),
+      total,
+      createdAt: new Date(),
+    });
 
-    alert(
-      `FOREVER POS PRO\\n${selectedTable}\\n\\n${lines}\\n\\nTổng tiền: ${formatMoney(
-        totalAmount
-      )}`
+    const printWindow = window.open("", "_blank", "width=420,height=800");
+    if (!printWindow) {
+      alert("Trình duyệt đang chặn popup in bill.");
+      return;
+    }
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handleTempPrint = () => {
+    printReceipt("temp");
+    notify(`Đã in phiếu tạm tính cho ${selectedTable}`, "info");
+  };
+
+  const handleCheckout = () => {
+    if (!currentOrder.length) {
+      notify("Chưa có món để thanh toán", "warning");
+      return;
+    }
+
+    const stockCheck = canCheckout();
+    if (!stockCheck.ok) {
+      notify(stockCheck.message, "error");
+      return;
+    }
+
+    const required = getRequiredIngredients(currentOrder);
+
+    setInventory((prev) =>
+      prev.map((stockItem) => {
+        const usedQty = required[stockItem.sku] || 0;
+        return {
+          ...stockItem,
+          stock: Number(stockItem.stock) - usedQty,
+        };
+      })
     );
+
+    const receiptId = generateReceiptCode();
+    const log = {
+      id: receiptId,
+      type: "payment",
+      tableName: selectedTable,
+      seller: loggedInUser?.username || "staff",
+      customerName,
+      items: currentOrder,
+      subtotal,
+      discount: Number(discount || 0),
+      total,
+      createdAt: new Date().toISOString(),
+    };
+
+    setPaymentLogs((prev) => [log, ...prev]);
+
+    setStockLogs((prev) => [
+      {
+        id: Date.now(),
+        type: "auto_deduct",
+        note: `Tự động trừ kho khi thanh toán ${selectedTable}`,
+        createdAt: new Date().toISOString(),
+        items: Object.entries(required).map(([sku, qty]) => ({
+          sku,
+          qty,
+        })),
+      },
+      ...prev,
+    ]);
+
+    printReceipt("sale");
+
+    setOrders((prev) => ({
+      ...prev,
+      [selectedTable]: [],
+    }));
+
+    setDiscount(0);
+    setCustomerName("Khách lẻ");
+    notify(`Thanh toán thành công ${selectedTable} - ${formatMoney(total)}`, "success");
+  };
+
+  const handleImportStock = (e) => {
+    e.preventDefault();
+
+    const qty = Number(stockForm.qty || 0);
+    const cost = Number(stockForm.cost || 0);
+
+    if (!stockForm.sku || qty <= 0) {
+      notify("Vui lòng nhập số lượng hợp lệ", "warning");
+      return;
+    }
+
+    setInventory((prev) =>
+      prev.map((item) =>
+        item.sku === stockForm.sku
+          ? {
+              ...item,
+              stock: Number(item.stock) + qty,
+              cost: cost > 0 ? cost : item.cost,
+            }
+          : item
+      )
+    );
+
+    const inv = inventory.find((i) => i.sku === stockForm.sku);
+
+    setStockLogs((prev) => [
+      {
+        id: Date.now(),
+        type: "import",
+        note: `Nhập hàng: ${inv?.name || stockForm.sku}`,
+        createdAt: new Date().toISOString(),
+        items: [{ sku: stockForm.sku, qty, cost }],
+      },
+      ...prev,
+    ]);
+
+    setStockForm((prev) => ({
+      ...prev,
+      qty: "",
+      cost: "",
+    }));
+
+    notify(`Đã nhập thêm ${qty} ${inv?.unit || ""} ${inv?.name || ""}`, "success");
   };
 
   if (!loggedInUser) {
     return (
       <div style={styles.page}>
         <div style={styles.loginCard}>
-          <div style={styles.watermark}>FOREVER</div>
-
-          <h1 style={styles.title}>FOREVER POS PRO</h1>
-          <p style={styles.subtitle}>Đăng nhập hệ thống bán hàng internet</p>
+          <div style={styles.loginWatermark}>FOREVER</div>
+          <h1 style={styles.loginTitle}>FOREVER POS PRO</h1>
+          <p style={styles.loginSubtitle}>
+            Đăng nhập hệ thống bán hàng internet
+          </p>
 
           <form onSubmit={handleLogin}>
             <input
@@ -186,21 +723,16 @@ export default function App() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={styles.input}
-              autoComplete="username"
             />
-
             <input
               type="password"
               placeholder="Mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={styles.input}
-              autoComplete="current-password"
             />
-
             {error ? <div style={styles.errorBox}>{error}</div> : null}
-
-            <button type="submit" style={styles.button} disabled={loading}>
+            <button type="submit" style={styles.mainButton}>
               {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
           </form>
@@ -216,17 +748,39 @@ export default function App() {
 
   return (
     <div style={styles.appShell}>
+      <div style={styles.notificationWrap}>
+        {notifications.map((item) => (
+          <div
+            key={item.id}
+            style={{
+              ...styles.notification,
+              ...(item.type === "success"
+                ? styles.notificationSuccess
+                : item.type === "error"
+                ? styles.notificationError
+                : item.type === "warning"
+                ? styles.notificationWarning
+                : styles.notificationInfo),
+            }}
+          >
+            {item.message}
+          </div>
+        ))}
+      </div>
+
       <aside style={styles.sidebar}>
         <div>
-          <div style={styles.logoBox}>FOREVER</div>
-          <div style={styles.userBox}>
+          <div style={styles.logo}>FOREVER</div>
+          <div style={styles.brandText}>POS PRO</div>
+
+          <div style={styles.userCard}>
             <div style={styles.userName}>{loggedInUser.username}</div>
             <div style={styles.userRole}>
               {loggedInUser.role === "admin" ? "Quản trị viên" : "Nhân viên"}
             </div>
           </div>
 
-          <div style={styles.navGroup}>
+          <div style={styles.navList}>
             <button
               style={{
                 ...styles.navButton,
@@ -240,192 +794,374 @@ export default function App() {
             <button
               style={{
                 ...styles.navButton,
-                ...(activeTab === "menu" ? styles.navButtonActive : {}),
+                ...(activeTab === "hoadon" ? styles.navButtonActive : {}),
               }}
-              onClick={() => setActiveTab("menu")}
+              onClick={() => setActiveTab("hoadon")}
             >
-              Thực đơn
+              Hóa đơn
             </button>
 
             {loggedInUser.role === "admin" && (
-              <button
-                style={{
-                  ...styles.navButton,
-                  ...(activeTab === "baocao" ? styles.navButtonActive : {}),
-                }}
-                onClick={() => setActiveTab("baocao")}
-              >
-                Báo cáo
-              </button>
+              <>
+                <button
+                  style={{
+                    ...styles.navButton,
+                    ...(activeTab === "kho" ? styles.navButtonActive : {}),
+                  }}
+                  onClick={() => setActiveTab("kho")}
+                >
+                  Kho hàng
+                </button>
+
+                <button
+                  style={{
+                    ...styles.navButton,
+                    ...(activeTab === "baocao" ? styles.navButtonActive : {}),
+                  }}
+                  onClick={() => setActiveTab("baocao")}
+                >
+                  Báo cáo
+                </button>
+              </>
             )}
           </div>
         </div>
 
-        <button style={styles.logoutButton} onClick={handleLogout}>
+        <button style={styles.logoutBtn} onClick={handleLogout}>
           Đăng xuất
         </button>
       </aside>
 
       <main style={styles.main}>
-        {activeTab === "banhang" && (
-          <>
-            <div style={styles.topbar}>
-              <div>
-                <h2 style={styles.pageTitle}>Quản lý bán hàng</h2>
-                <div style={styles.pageNote}>API: {API_URL}</div>
-              </div>
-              <div style={styles.roleBadge}>
-                {loggedInUser.role === "admin" ? "ADMIN" : "STAFF"}
-              </div>
+        <div style={styles.headerBar}>
+          <div>
+            <div style={styles.headerTitle}>FOREVER Coffee & Beer</div>
+            <div style={styles.headerSub}>
+              B38 đường 4A, P. Tân Hưng, Q.7 • {STORE_INFO.phone}
             </div>
+          </div>
+          <div style={styles.headerBadge}>
+            {loggedInUser.role === "admin" ? "ADMIN" : "STAFF"}
+          </div>
+        </div>
 
-            <div style={styles.grid}>
-              <section style={styles.panel}>
-                <h3 style={styles.panelTitle}>Khu vực bàn</h3>
-                <div style={styles.tableGrid}>
-                  {TABLES.map((table) => {
-                    const count = (orders[table] || []).reduce(
-                      (sum, item) => sum + item.qty,
-                      0
-                    );
-                    return (
-                      <button
-                        key={table}
-                        onClick={() => setSelectedTable(table)}
-                        style={{
-                          ...styles.tableButton,
-                          ...(selectedTable === table
-                            ? styles.tableButtonActive
-                            : {}),
-                        }}
-                      >
-                        <div>{table}</div>
-                        <div style={styles.tableMeta}>
-                          {count > 0 ? `${count} món` : "Trống"}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
+        {activeTab === "banhang" && (
+          <div style={styles.salesLayout}>
+            <section style={styles.cardLarge}>
+              <div style={styles.sectionHeader}>
+                <h3 style={styles.sectionTitle}>Sảnh chờ / Bàn phục vụ</h3>
+                <div style={styles.smallNote}>Lưu đơn tự động theo từng bàn</div>
+              </div>
 
-              <section style={styles.panel}>
-                <h3 style={styles.panelTitle}>Đơn hiện tại - {selectedTable}</h3>
+              <div style={styles.tableGrid}>
+                {TABLES.map((table) => (
+                  <button
+                    key={table}
+                    onClick={() => setSelectedTable(table)}
+                    style={{
+                      ...styles.tableBtn,
+                      ...(selectedTable === table ? styles.tableBtnActive : {}),
+                    }}
+                  >
+                    <div>{table}</div>
+                    <div style={styles.tableCount}>
+                      {getTableItemCount(table) > 0
+                        ? `${getTableItemCount(table)} món`
+                        : "Trống"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </section>
 
-                {!currentOrder.length ? (
-                  <div style={styles.emptyBox}>Chưa có món trong đơn.</div>
+            <section style={styles.cardLarge}>
+              <div style={styles.sectionHeader}>
+                <h3 style={styles.sectionTitle}>Đơn hiện tại - {selectedTable}</h3>
+                <div style={styles.smallNote}>Bill in theo mẫu FOREVER</div>
+              </div>
+
+              <div style={styles.formRow}>
+                <input
+                  style={styles.compactInput}
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Khách hàng"
+                />
+                <input
+                  style={styles.compactInput}
+                  type="number"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="Chiết khấu"
+                />
+              </div>
+
+              <div style={styles.orderBox}>
+                {currentOrder.length === 0 ? (
+                  <div style={styles.emptyState}>Chưa có món trong đơn này.</div>
                 ) : (
-                  <div style={styles.orderList}>
-                    {currentOrder.map((item) => (
-                      <div key={item.id} style={styles.orderItem}>
-                        <div>
-                          <div style={styles.orderName}>{item.name}</div>
-                          <div style={styles.orderPrice}>
-                            {formatMoney(item.price)}
-                          </div>
-                        </div>
-
-                        <div style={styles.qtyBox}>
-                          <button
-                            style={styles.qtyBtn}
-                            onClick={() => changeQty(item.id, -1)}
-                          >
-                            -
-                          </button>
-                          <span style={styles.qtyValue}>{item.qty}</span>
-                          <button
-                            style={styles.qtyBtn}
-                            onClick={() => changeQty(item.id, 1)}
-                          >
-                            +
-                          </button>
+                  currentOrder.map((item) => (
+                    <div key={item.id} style={styles.orderRow}>
+                      <div>
+                        <div style={styles.orderName}>{item.name}</div>
+                        <div style={styles.orderMeta}>
+                          {formatMoney(item.price)} x {item.qty}
                         </div>
                       </div>
-                    ))}
-                  </div>
+
+                      <div style={styles.orderActions}>
+                        <button
+                          style={styles.qtyBtn}
+                          onClick={() => changeQty(item.id, -1)}
+                        >
+                          -
+                        </button>
+                        <span style={styles.qtyText}>{item.qty}</span>
+                        <button
+                          style={styles.qtyBtn}
+                          onClick={() => changeQty(item.id, 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <div style={styles.orderTotal}>
+                        {formatMoney(item.price * item.qty)}
+                      </div>
+                    </div>
+                  ))
                 )}
+              </div>
 
-                <div style={styles.totalBox}>
-                  <span>Tổng tiền</span>
-                  <strong>{formatMoney(totalAmount)}</strong>
+              <div style={styles.totalPanel}>
+                <div style={styles.totalRow}>
+                  <span>Tổng tiền hàng</span>
+                  <strong>{formatMoney(subtotal)}</strong>
                 </div>
-
-                <div style={styles.actionRow}>
-                  <button style={styles.secondaryButton} onClick={clearTableOrder}>
-                    Xóa đơn
-                  </button>
-                  <button style={styles.primaryButton} onClick={handlePrintBill}>
-                    In bill
-                  </button>
+                <div style={styles.totalRow}>
+                  <span>Chiết khấu</span>
+                  <strong>{formatMoney(discount)}</strong>
                 </div>
-              </section>
+                <div style={{ ...styles.totalRow, ...styles.totalGrand }}>
+                  <span>Tổng cộng</span>
+                  <strong>{formatMoney(total)}</strong>
+                </div>
+              </div>
 
-              <section style={styles.panel}>
-                <h3 style={styles.panelTitle}>Menu đồ uống</h3>
-                <div style={styles.menuList}>
-                  {MENU_ITEMS.map((item) => (
+              <div style={styles.actionGrid}>
+                <button style={styles.secondaryBtn} onClick={handleTempPrint}>
+                  In tạm tính
+                </button>
+                <button style={styles.secondaryBtn} onClick={clearCurrentOrder}>
+                  Xóa đơn
+                </button>
+                <button style={styles.primaryBtn} onClick={handleCheckout}>
+                  Thanh toán + in bill
+                </button>
+              </div>
+            </section>
+
+            <section style={styles.cardLarge}>
+              <div style={styles.sectionHeader}>
+                <h3 style={styles.sectionTitle}>Menu đồ uống</h3>
+                <div style={styles.categoryTabs}>
+                  {categories.map((cat) => (
                     <button
-                      key={item.id}
-                      style={styles.menuItem}
-                      onClick={() => addItemToOrder(item)}
+                      key={cat}
+                      style={{
+                        ...styles.catBtn,
+                        ...(selectedCategory === cat ? styles.catBtnActive : {}),
+                      }}
+                      onClick={() => setSelectedCategory(cat)}
                     >
-                      <div style={styles.menuName}>{item.name}</div>
-                      <div style={styles.menuCategory}>{item.category}</div>
-                      <div style={styles.menuPrice}>{formatMoney(item.price)}</div>
+                      {cat}
                     </button>
                   ))}
                 </div>
-              </section>
-            </div>
-          </>
-        )}
+              </div>
 
-        {activeTab === "menu" && (
-          <div style={styles.panel}>
-            <h3 style={styles.panelTitle}>Danh sách thực đơn</h3>
-            <div style={styles.simpleList}>
-              {MENU_ITEMS.map((item) => (
-                <div key={item.id} style={styles.simpleRow}>
-                  <span>{item.name}</span>
-                  <strong>{formatMoney(item.price)}</strong>
-                </div>
-              ))}
-            </div>
+              <div style={styles.menuGrid}>
+                {filteredMenu.map((item) => (
+                  <button
+                    key={item.id}
+                    style={styles.menuCard}
+                    onClick={() => addItemToOrder(item)}
+                  >
+                    <div style={styles.menuCardName}>{item.name}</div>
+                    <div style={styles.menuCardCategory}>{item.category}</div>
+                    <div style={styles.menuCardPrice}>{formatMoney(item.price)}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
-        {activeTab === "baocao" && loggedInUser.role === "admin" && (
-          <div style={styles.panel}>
-            <h3 style={styles.panelTitle}>Báo cáo nhanh</h3>
-            <div style={styles.reportGrid}>
-              <div style={styles.reportCard}>
-                <div style={styles.reportLabel}>Số bàn đang phục vụ</div>
-                <div style={styles.reportValue}>
-                  {
-                    TABLES.filter((table) => (orders[table] || []).length > 0)
-                      .length
+        {activeTab === "kho" && loggedInUser.role === "admin" && (
+          <div style={styles.adminLayout}>
+            <section style={styles.cardLarge}>
+              <div style={styles.sectionHeader}>
+                <h3 style={styles.sectionTitle}>Nhập hàng / cập nhật kho</h3>
+              </div>
+
+              <form onSubmit={handleImportStock} style={styles.stockForm}>
+                <select
+                  style={styles.compactInput}
+                  value={stockForm.sku}
+                  onChange={(e) =>
+                    setStockForm((prev) => ({ ...prev, sku: e.target.value }))
                   }
+                >
+                  {inventory.map((item) => (
+                    <option key={item.sku} value={item.sku}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  style={styles.compactInput}
+                  type="number"
+                  placeholder="Số lượng nhập"
+                  value={stockForm.qty}
+                  onChange={(e) =>
+                    setStockForm((prev) => ({ ...prev, qty: e.target.value }))
+                  }
+                />
+
+                <input
+                  style={styles.compactInput}
+                  type="number"
+                  placeholder="Giá nhập"
+                  value={stockForm.cost}
+                  onChange={(e) =>
+                    setStockForm((prev) => ({ ...prev, cost: e.target.value }))
+                  }
+                />
+
+                <button type="submit" style={styles.primaryBtn}>
+                  Nhập hàng
+                </button>
+              </form>
+            </section>
+
+            <section style={styles.cardLarge}>
+              <div style={styles.sectionHeader}>
+                <h3 style={styles.sectionTitle}>Tồn kho hiện tại</h3>
+                <div style={styles.smallNote}>
+                  Tự động trừ khi hóa đơn được thanh toán
                 </div>
               </div>
 
-              <div style={styles.reportCard}>
-                <div style={styles.reportLabel}>Tổng món đang mở</div>
-                <div style={styles.reportValue}>
-                  {Object.values(orders)
-                    .flat()
-                    .reduce((sum, item) => sum + item.qty, 0)}
+              <div style={styles.inventoryTable}>
+                <div style={styles.inventoryHead}>
+                  <div>Nguyên liệu</div>
+                  <div>Tồn</div>
+                  <div>ĐVT</div>
+                  <div>Giá nhập</div>
                 </div>
-              </div>
 
-              <div style={styles.reportCard}>
-                <div style={styles.reportLabel}>Tổng tiền tạm tính</div>
-                <div style={styles.reportValue}>
-                  {formatMoney(
-                    Object.values(orders)
-                      .flat()
-                      .reduce((sum, item) => sum + item.qty * item.price, 0)
-                  )}
-                </div>
+                {inventory.map((item) => (
+                  <div key={item.sku} style={styles.inventoryRow}>
+                    <div>{item.name}</div>
+                    <div
+                      style={{
+                        color: Number(item.stock) <= 10 ? "#c62828" : "#2c1c14",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formatMoney(item.stock)}
+                    </div>
+                    <div>{item.unit}</div>
+                    <div>{formatMoney(item.cost)}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTab === "hoadon" && (
+          <section style={styles.cardLarge}>
+            <div style={styles.sectionHeader}>
+              <h3 style={styles.sectionTitle}>Lịch sử thanh toán</h3>
+              <div style={styles.smallNote}>Hiển thị bill đã thanh toán</div>
+            </div>
+
+            {paymentLogs.length === 0 ? (
+              <div style={styles.emptyState}>Chưa có hóa đơn nào.</div>
+            ) : (
+              <div style={styles.historyList}>
+                {paymentLogs.map((bill) => (
+                  <div key={bill.id} style={styles.historyCard}>
+                    <div style={styles.historyTop}>
+                      <div>
+                        <div style={styles.historyCode}>{bill.id}</div>
+                        <div style={styles.historyMeta}>
+                          {bill.tableName} • {bill.customerName} • {bill.seller}
+                        </div>
+                      </div>
+                      <div style={styles.historyTotal}>
+                        {formatMoney(bill.total)}
+                      </div>
+                    </div>
+
+                    <div style={styles.historyItems}>
+                      {bill.items.map((item) => (
+                        <div key={`${bill.id}-${item.id}`} style={styles.historyItemRow}>
+                          <span>
+                            {item.name} x{item.qty}
+                          </span>
+                          <strong>{formatMoney(item.price * item.qty)}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={styles.historyDate}>
+                      {formatDateTime(bill.createdAt)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {activeTab === "baocao" && loggedInUser.role === "admin" && (
+          <div style={styles.reportGrid}>
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>Bàn đang phục vụ</div>
+              <div style={styles.reportValue}>{activeTablesCount}</div>
+            </div>
+
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>Tổng món đang mở</div>
+              <div style={styles.reportValue}>{totalOpenItems}</div>
+            </div>
+
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>Doanh thu đã thanh toán</div>
+              <div style={styles.reportValue}>
+                {formatMoney(
+                  paymentLogs.reduce((sum, bill) => sum + Number(bill.total || 0), 0)
+                )}
+              </div>
+            </div>
+
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>Số hóa đơn</div>
+              <div style={styles.reportValue}>{paymentLogs.length}</div>
+            </div>
+
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>Nguyên liệu sắp hết</div>
+              <div style={styles.reportValue}>{lowStockItems.length}</div>
+            </div>
+
+            <div style={styles.reportCard}>
+              <div style={styles.reportLabel}>API backend</div>
+              <div style={{ ...styles.reportValue, fontSize: 18 }}>
+                forever-pos.onrender.com
               </div>
             </div>
           </div>
@@ -438,7 +1174,7 @@ export default function App() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#e9e7e5",
+    background: "#ece8e4",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -448,52 +1184,50 @@ const styles = {
   loginCard: {
     width: "100%",
     maxWidth: 760,
-    background: "#f5f3f1",
+    background: "#f7f4f1",
     borderRadius: 28,
     padding: 48,
-    boxSizing: "border-box",
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+    boxSizing: "border-box",
   },
-  watermark: {
+  loginWatermark: {
     fontSize: 88,
     fontWeight: 800,
-    color: "#dcd9d7",
-    lineHeight: 1,
-    marginBottom: 40,
-    letterSpacing: 2,
-  },
-  title: {
-    fontSize: 52,
-    fontWeight: 800,
-    color: "#1f1818",
-    margin: "0 0 18px 0",
-  },
-  subtitle: {
-    fontSize: 28,
-    color: "#524c4a",
+    color: "#ddd7d3",
     marginBottom: 36,
+    lineHeight: 1,
+  },
+  loginTitle: {
+    fontSize: 52,
+    margin: 0,
+    color: "#211917",
+  },
+  loginSubtitle: {
+    fontSize: 28,
+    color: "#5e5551",
+    marginTop: 18,
+    marginBottom: 34,
   },
   input: {
     width: "100%",
     height: 74,
     borderRadius: 24,
-    border: "2px solid #d2cdca",
+    border: "2px solid #d8d0cb",
     padding: "0 22px",
     fontSize: 28,
-    marginBottom: 20,
     boxSizing: "border-box",
-    outline: "none",
-    background: "#f8f7f6",
+    marginBottom: 18,
+    background: "#fbfaf9",
   },
   errorBox: {
-    background: "#f7d8d8",
-    color: "#b11f1f",
-    fontSize: 24,
-    padding: 22,
-    borderRadius: 22,
-    marginBottom: 20,
+    background: "#f6d7d7",
+    color: "#b71c1c",
+    padding: 18,
+    borderRadius: 18,
+    marginBottom: 18,
+    fontSize: 22,
   },
-  button: {
+  mainButton: {
     width: "100%",
     height: 78,
     border: "none",
@@ -505,74 +1239,109 @@ const styles = {
     cursor: "pointer",
   },
   demoInfo: {
-    marginTop: 42,
-    fontSize: 26,
+    marginTop: 34,
+    color: "#655d59",
+    fontSize: 24,
     lineHeight: 1.7,
-    color: "#585250",
     fontWeight: 700,
   },
   appShell: {
     minHeight: "100vh",
-    background: "#ebe7e3",
     display: "flex",
+    background: "#efeae6",
     fontFamily: "Arial, sans-serif",
+  },
+  notificationWrap: {
+    position: "fixed",
+    top: 16,
+    right: 16,
+    zIndex: 9999,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
+  notification: {
+    minWidth: 280,
+    maxWidth: 420,
+    padding: "14px 16px",
+    borderRadius: 14,
+    color: "#fff",
+    fontWeight: 700,
+    boxShadow: "0 10px 24px rgba(0,0,0,0.16)",
+  },
+  notificationSuccess: {
+    background: "#2e7d32",
+  },
+  notificationError: {
+    background: "#c62828",
+  },
+  notificationWarning: {
+    background: "#ef6c00",
+  },
+  notificationInfo: {
+    background: "#1565c0",
   },
   sidebar: {
     width: 280,
     background: "#2c1c14",
     color: "#fff",
-    padding: 24,
-    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
+    padding: 22,
+    boxSizing: "border-box",
   },
-  logoBox: {
+  logo: {
     fontSize: 34,
     fontWeight: 800,
+    letterSpacing: 1,
+  },
+  brandText: {
+    opacity: 0.8,
+    marginTop: 4,
     marginBottom: 24,
   },
-  userBox: {
+  userCard: {
     background: "rgba(255,255,255,0.08)",
     borderRadius: 18,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 22,
   },
   userName: {
     fontSize: 24,
     fontWeight: 700,
-    marginBottom: 6,
   },
   userRole: {
-    fontSize: 16,
-    opacity: 0.85,
+    marginTop: 6,
+    opacity: 0.8,
+    fontSize: 15,
   },
-  navGroup: {
+  navList: {
     display: "flex",
     flexDirection: "column",
     gap: 12,
   },
   navButton: {
-    height: 54,
-    borderRadius: 16,
+    height: 52,
     border: "none",
-    background: "#4a2e21",
+    borderRadius: 16,
+    background: "#4b2f22",
     color: "#fff",
-    fontSize: 18,
     fontWeight: 700,
+    fontSize: 17,
     cursor: "pointer",
   },
   navButtonActive: {
     background: "#9a430a",
   },
-  logoutButton: {
-    height: 54,
+  logoutBtn: {
+    height: 52,
     borderRadius: 16,
     border: "none",
     background: "#fff",
     color: "#2c1c14",
-    fontSize: 18,
     fontWeight: 700,
+    fontSize: 17,
     cursor: "pointer",
   },
   main: {
@@ -580,215 +1349,337 @@ const styles = {
     padding: 24,
     boxSizing: "border-box",
   },
-  topbar: {
+  headerBar: {
+    background: "#f8f4f1",
+    borderRadius: 22,
+    padding: 20,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
-    gap: 16,
+    boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
   },
-  pageTitle: {
-    margin: 0,
-    fontSize: 34,
-    color: "#2b1d17",
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 800,
+    color: "#241816",
   },
-  pageNote: {
-    marginTop: 8,
-    color: "#755f55",
-    fontSize: 14,
-    wordBreak: "break-all",
+  headerSub: {
+    marginTop: 6,
+    color: "#756861",
   },
-  roleBadge: {
+  headerBadge: {
     background: "#9a430a",
     color: "#fff",
-    padding: "10px 18px",
+    padding: "10px 16px",
     borderRadius: 999,
     fontWeight: 700,
   },
-  grid: {
+  salesLayout: {
     display: "grid",
-    gridTemplateColumns: "1.1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1.15fr 1fr",
     gap: 20,
   },
-  panel: {
-    background: "#f8f5f2",
+  adminLayout: {
+    display: "grid",
+    gridTemplateColumns: "0.95fr 1.25fr",
+    gap: 20,
+  },
+  cardLarge: {
+    background: "#f8f4f1",
     borderRadius: 24,
     padding: 20,
-    boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
   },
-  panelTitle: {
-    margin: "0 0 18px 0",
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    margin: 0,
     fontSize: 24,
-    color: "#2b1d17",
+    color: "#241816",
+  },
+  smallNote: {
+    marginTop: 6,
+    color: "#7f726a",
+    fontSize: 14,
   },
   tableGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
   },
-  tableButton: {
-    minHeight: 74,
+  tableBtn: {
+    minHeight: 76,
     borderRadius: 18,
-    border: "2px solid #e2d8d1",
+    border: "2px solid #e2d7d0",
     background: "#fff",
     cursor: "pointer",
     fontWeight: 700,
-    fontSize: 16,
-    color: "#2b1d17",
+    color: "#241816",
   },
-  tableButtonActive: {
+  tableBtnActive: {
     background: "#9a430a",
     color: "#fff",
     border: "2px solid #9a430a",
   },
-  tableMeta: {
+  tableCount: {
     marginTop: 6,
     fontSize: 13,
-    fontWeight: 500,
     opacity: 0.85,
+    fontWeight: 500,
   },
-  emptyBox: {
-    background: "#fff",
-    borderRadius: 18,
-    padding: 20,
-    color: "#7c6b63",
-    marginBottom: 16,
-  },
-  orderList: {
-    display: "flex",
-    flexDirection: "column",
+  formRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  orderItem: {
+  compactInput: {
+    height: 48,
+    borderRadius: 14,
+    border: "1px solid #d9cfc8",
+    padding: "0 14px",
+    fontSize: 16,
+    boxSizing: "border-box",
+    background: "#fff",
+  },
+  orderBox: {
     background: "#fff",
     borderRadius: 18,
+    padding: 12,
+    minHeight: 280,
+    maxHeight: 420,
+    overflow: "auto",
+    border: "1px solid #ebe1da",
+  },
+  emptyState: {
+    color: "#7d7169",
     padding: 14,
-    display: "flex",
-    justifyContent: "space-between",
+  },
+  orderRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto auto",
+    gap: 14,
     alignItems: "center",
-    gap: 12,
+    padding: "10px 8px",
+    borderBottom: "1px dashed #eadfd8",
   },
   orderName: {
     fontWeight: 700,
-    color: "#2b1d17",
+    color: "#241816",
   },
-  orderPrice: {
-    color: "#7b6558",
+  orderMeta: {
     marginTop: 4,
+    fontSize: 13,
+    color: "#7b6c63",
   },
-  qtyBox: {
+  orderActions: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
   qtyBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
     border: "none",
+    borderRadius: 10,
     background: "#9a430a",
     color: "#fff",
-    fontSize: 18,
     cursor: "pointer",
+    fontWeight: 700,
   },
-  qtyValue: {
-    minWidth: 20,
+  qtyText: {
+    minWidth: 18,
     textAlign: "center",
     fontWeight: 700,
   },
-  totalBox: {
-    background: "#efe4db",
+  orderTotal: {
+    minWidth: 90,
+    textAlign: "right",
+    fontWeight: 700,
+    color: "#241816",
+  },
+  totalPanel: {
+    background: "#efe3da",
     borderRadius: 18,
-    padding: 16,
+    padding: 14,
+    marginTop: 14,
+  },
+  totalRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    marginBottom: 8,
+    color: "#241816",
+  },
+  totalGrand: {
     fontSize: 20,
-    marginBottom: 16,
-    color: "#2b1d17",
+    marginBottom: 0,
   },
-  actionRow: {
-    display: "flex",
-    gap: 12,
+  actionGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1.2fr",
+    gap: 10,
+    marginTop: 14,
   },
-  secondaryButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 16,
-    border: "2px solid #d4c2b6",
+  secondaryBtn: {
+    height: 50,
+    borderRadius: 14,
+    border: "2px solid #d9c7bc",
     background: "#fff",
-    color: "#6c5143",
+    color: "#6c5345",
     fontWeight: 700,
     cursor: "pointer",
   },
-  primaryButton: {
-    flex: 1,
-    height: 52,
-    borderRadius: 16,
+  primaryBtn: {
+    height: 50,
+    borderRadius: 14,
     border: "none",
     background: "#9a430a",
     color: "#fff",
     fontWeight: 700,
     cursor: "pointer",
   },
-  menuList: {
+  categoryTabs: {
     display: "flex",
-    flexDirection: "column",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  catBtn: {
+    height: 38,
+    padding: "0 14px",
+    borderRadius: 999,
+    border: "1px solid #decfc5",
+    background: "#fff",
+    cursor: "pointer",
+    fontWeight: 600,
+  },
+  catBtnActive: {
+    background: "#9a430a",
+    color: "#fff",
+    border: "1px solid #9a430a",
+  },
+  menuGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: 12,
   },
-  menuItem: {
-    textAlign: "left",
-    border: "2px solid #eadfd8",
-    borderRadius: 18,
+  menuCard: {
+    border: "1px solid #e7dbd3",
     background: "#fff",
+    borderRadius: 18,
     padding: 14,
+    textAlign: "left",
     cursor: "pointer",
   },
-  menuName: {
+  menuCardName: {
     fontWeight: 700,
-    color: "#2b1d17",
-    marginBottom: 4,
+    color: "#241816",
   },
-  menuCategory: {
-    fontSize: 14,
-    color: "#8a766a",
-    marginBottom: 8,
+  menuCardCategory: {
+    color: "#8a7b72",
+    marginTop: 4,
+    fontSize: 13,
   },
-  menuPrice: {
-    fontWeight: 700,
+  menuCardPrice: {
+    marginTop: 10,
     color: "#9a430a",
+    fontWeight: 800,
   },
-  simpleList: {
-    display: "flex",
-    flexDirection: "column",
+  stockForm: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
     gap: 12,
   },
-  simpleRow: {
+  inventoryTable: {
     background: "#fff",
-    borderRadius: 16,
+    borderRadius: 18,
+    overflow: "hidden",
+    border: "1px solid #e8ddd6",
+  },
+  inventoryHead: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+    gap: 10,
+    padding: 14,
+    background: "#f1e5dc",
+    fontWeight: 800,
+    color: "#241816",
+  },
+  inventoryRow: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+    gap: 10,
+    padding: 14,
+    borderTop: "1px solid #efe4dd",
+    alignItems: "center",
+  },
+  historyList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+  },
+  historyCard: {
+    background: "#fff",
+    borderRadius: 18,
     padding: 16,
+    border: "1px solid #e8ddd6",
+  },
+  historyTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 14,
+    alignItems: "flex-start",
+  },
+  historyCode: {
+    fontWeight: 800,
+    color: "#241816",
+    fontSize: 18,
+  },
+  historyMeta: {
+    color: "#7c6d65",
+    marginTop: 6,
+  },
+  historyTotal: {
+    fontWeight: 800,
+    color: "#9a430a",
+    fontSize: 20,
+  },
+  historyItems: {
+    marginTop: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  },
+  historyItemRow: {
     display: "flex",
     justifyContent: "space-between",
     gap: 12,
+  },
+  historyDate: {
+    marginTop: 12,
+    color: "#84766d",
+    fontSize: 13,
   },
   reportGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 16,
+    gap: 18,
   },
   reportCard: {
-    background: "#fff",
-    borderRadius: 18,
-    padding: 20,
+    background: "#f8f4f1",
+    borderRadius: 22,
+    padding: 22,
+    boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
   },
   reportLabel: {
-    color: "#7a665a",
+    color: "#7b6d65",
     marginBottom: 10,
   },
   reportValue: {
-    color: "#2b1d17",
-    fontSize: 28,
+    color: "#241816",
+    fontSize: 30,
     fontWeight: 800,
   },
 };
