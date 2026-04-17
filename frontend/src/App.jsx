@@ -18,6 +18,11 @@ import {
   Users,
   Bell,
   X,
+  Boxes,
+  PackagePlus,
+  ClipboardList,
+  AlertTriangle,
+  Wrench,
 } from "lucide-react";
 
 const API =
@@ -49,7 +54,7 @@ const money = (v) =>
     style: "currency",
     currency: "VND",
     maximumFractionDigits: 0,
-  }).format(v || 0);
+  }).format(Number(v || 0));
 
 const formatTime = (v) => new Date(v).toLocaleString("vi-VN");
 
@@ -179,6 +184,64 @@ const SectionTitle = ({ icon, title, right }) => (
   </div>
 );
 
+function InventoryItemEditor({
+  draft,
+  setDraft,
+  onSubmit,
+  submitText = "Thêm hàng",
+}) {
+  return (
+    <div className="stack">
+      <input
+        className="input"
+        placeholder="Tên hàng hóa"
+        value={draft.name}
+        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+      />
+      <div className="two-col">
+        <input
+          className="input"
+          placeholder="Đơn vị tính (chai, kg, gói...)"
+          value={draft.unit}
+          onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
+        />
+        <input
+          className="input"
+          type="number"
+          placeholder="Tồn đầu"
+          value={draft.quantity}
+          onChange={(e) => setDraft({ ...draft, quantity: e.target.value })}
+        />
+      </div>
+      <div className="two-col">
+        <input
+          className="input"
+          type="number"
+          placeholder="Mức cảnh báo thấp"
+          value={draft.minQuantity}
+          onChange={(e) => setDraft({ ...draft, minQuantity: e.target.value })}
+        />
+        <input
+          className="input"
+          type="number"
+          placeholder="Giá vốn / đơn vị"
+          value={draft.unitCost}
+          onChange={(e) => setDraft({ ...draft, unitCost: e.target.value })}
+        />
+      </div>
+      <input
+        className="input"
+        placeholder="Ghi chú"
+        value={draft.note}
+        onChange={(e) => setDraft({ ...draft, note: e.target.value })}
+      />
+      <button className="btn primary" onClick={onSubmit}>
+        <PackagePlus size={16} /> {submitText}
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [shop, setShop] = useState(null);
@@ -193,25 +256,60 @@ export default function App() {
     bills: [],
   });
   const [toasts, setToasts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [tab, setTab] = useState("sales");
+  const [inventoryTab, setInventoryTab] = useState("stock");
   const [selectedTable, setSelectedTable] = useState("Bàn 1");
   const [currentShift, setCurrentShift] = useState("morning");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Tất cả");
-  const [loading, setLoading] = useState(true);
 
   const [users, setUsers] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [inventoryTransactions, setInventoryTransactions] = useState([]);
+  const [inventoryReport, setInventoryReport] = useState({
+    totalItems: 0,
+    lowStockCount: 0,
+    lowStock: [],
+    inventory: [],
+  });
+  const [recipes, setRecipes] = useState([]);
+  const [selectedRecipeMenuId, setSelectedRecipeMenuId] = useState("");
+  const [recipeDraftRows, setRecipeDraftRows] = useState([]);
+
   const [draftItem, setDraftItem] = useState({
     name: "",
     price: "",
     category: "Cà phê",
   });
+
   const [draftUser, setDraftUser] = useState({
     fullName: "",
     username: "",
     password: "",
     role: "cashier",
+  });
+
+  const [draftInventory, setDraftInventory] = useState({
+    name: "",
+    unit: "",
+    quantity: "",
+    minQuantity: "",
+    unitCost: "",
+    note: "",
+  });
+
+  const [stockInForm, setStockInForm] = useState({
+    inventoryId: "",
+    quantity: "",
+    note: "",
+  });
+
+  const [adjustForm, setAdjustForm] = useState({
+    inventoryId: "",
+    quantity: "",
+    note: "",
   });
 
   const eventSourceRef = useRef(null);
@@ -246,6 +344,32 @@ export default function App() {
     }
   };
 
+  const loadInventoryBundle = async () => {
+    if (!isAdmin) return;
+
+    const [inv, txs, invReport, recipesData] = await Promise.all([
+      api("/api/inventory"),
+      api("/api/inventory/transactions"),
+      api("/api/inventory/report"),
+      api("/api/recipes"),
+    ]);
+
+    setInventory(inv);
+    setInventoryTransactions(txs);
+    setInventoryReport(invReport);
+    setRecipes(recipesData);
+
+    if (!selectedRecipeMenuId && recipesData.length > 0) {
+      setSelectedRecipeMenuId(recipesData[0].menuId);
+      setRecipeDraftRows(
+        (recipesData[0].items || []).map((r) => ({
+          inventoryId: r.inventoryId,
+          qtyPerUnit: r.qtyPerUnit,
+        }))
+      );
+    }
+  };
+
   async function bootstrap() {
     setLoading(true);
 
@@ -266,7 +390,29 @@ export default function App() {
       setReport(reportData);
 
       if (me.user.role === "admin") {
-        setUsers(await api("/api/users"));
+        const [userList, inv, txs, invReport, recipesData] = await Promise.all([
+          api("/api/users"),
+          api("/api/inventory"),
+          api("/api/inventory/transactions"),
+          api("/api/inventory/report"),
+          api("/api/recipes"),
+        ]);
+
+        setUsers(userList);
+        setInventory(inv);
+        setInventoryTransactions(txs);
+        setInventoryReport(invReport);
+        setRecipes(recipesData);
+
+        if (recipesData.length > 0) {
+          setSelectedRecipeMenuId(recipesData[0].menuId);
+          setRecipeDraftRows(
+            (recipesData[0].items || []).map((r) => ({
+              inventoryId: r.inventoryId,
+              qtyPerUnit: r.qtyPerUnit,
+            }))
+          );
+        }
       }
     } catch {
       localStorage.removeItem("forever_token");
@@ -304,6 +450,9 @@ export default function App() {
       pushToast("Có bill thanh toán mới", msg);
       showSystemNotification("FOREVER POS", `Có bill mới: ${msg}`);
       await refreshOrdersAndReport();
+      if (isAdmin) {
+        await loadInventoryBundle();
+      }
     });
 
     es.addEventListener("orders_updated", async () => {
@@ -312,6 +461,9 @@ export default function App() {
 
     es.addEventListener("menu_updated", async () => {
       setMenu(await api("/api/menu"));
+      if (isAdmin) {
+        setRecipes(await api("/api/recipes"));
+      }
     });
   };
 
@@ -335,7 +487,18 @@ export default function App() {
     if (user) {
       connectEvents();
     }
-  }, [user]);
+  }, [user]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!selectedRecipeMenuId || !recipes.length) return;
+    const found = recipes.find((r) => r.menuId === selectedRecipeMenuId);
+    setRecipeDraftRows(
+      (found?.items || []).map((r) => ({
+        inventoryId: r.inventoryId,
+        qtyPerUnit: r.qtyPerUnit,
+      }))
+    );
+  }, [selectedRecipeMenuId, recipes]);
 
   const activeMenu = menu.filter((m) => m.active);
 
@@ -360,6 +523,10 @@ export default function App() {
   const totalPrice = (order.items || []).reduce(
     (s, i) => s + i.qty * i.price,
     0
+  );
+
+  const lowStockIds = new Set(
+    (inventoryReport.lowStock || []).map((item) => item.id)
   );
 
   function setOrderItems(nextItems) {
@@ -634,6 +801,7 @@ export default function App() {
       });
 
       await refreshOrdersAndReport();
+      if (isAdmin) await loadInventoryBundle();
       printBill(bill);
       pushToast(
         "Thanh toán thành công",
@@ -652,7 +820,7 @@ export default function App() {
     });
 
     setShop(updated);
-    alert("Đã lưu thông tin quán");
+    pushToast("Đã lưu", "Đã cập nhật thông tin quán");
   };
 
   const addMenuItem = async () => {
@@ -671,6 +839,10 @@ export default function App() {
 
     setMenu((prev) => [item, ...prev]);
     setDraftItem({ name: "", price: "", category: "Cà phê" });
+    if (isAdmin) {
+      setRecipes(await api("/api/recipes"));
+    }
+    pushToast("Đã thêm món", item.name);
   };
 
   const toggleMenuItem = async (id) => {
@@ -688,6 +860,10 @@ export default function App() {
     });
 
     setMenu((prev) => prev.filter((m) => m.id !== id));
+    if (isAdmin) {
+      setRecipes(await api("/api/recipes"));
+    }
+    pushToast("Đã xóa món", "Món đã được xóa");
   };
 
   const addUser = async () => {
@@ -707,6 +883,7 @@ export default function App() {
       password: "",
       role: "cashier",
     });
+    pushToast("Đã thêm tài khoản", created.fullName);
   };
 
   const deleteUser = async (id) => {
@@ -717,6 +894,115 @@ export default function App() {
     });
 
     setUsers((prev) => prev.filter((u) => u.id !== id));
+    pushToast("Đã xóa", "Tài khoản đã được xóa");
+  };
+
+  const addInventoryItem = async () => {
+    if (!draftInventory.name || !draftInventory.unit) {
+      return alert("Nhập tên hàng và đơn vị tính");
+    }
+
+    await api("/api/inventory", {
+      method: "POST",
+      body: JSON.stringify({
+        name: draftInventory.name,
+        unit: draftInventory.unit,
+        quantity: Number(draftInventory.quantity || 0),
+        minQuantity: Number(draftInventory.minQuantity || 0),
+        unitCost: Number(draftInventory.unitCost || 0),
+        note: draftInventory.note,
+      }),
+    });
+
+    setDraftInventory({
+      name: "",
+      unit: "",
+      quantity: "",
+      minQuantity: "",
+      unitCost: "",
+      note: "",
+    });
+    await loadInventoryBundle();
+    pushToast("Đã thêm hàng", "Hàng hóa kho đã được tạo");
+  };
+
+  const stockInInventory = async () => {
+    if (!stockInForm.inventoryId || !stockInForm.quantity) {
+      return alert("Chọn hàng hóa và nhập số lượng");
+    }
+
+    await api(`/api/inventory/${stockInForm.inventoryId}/stock-in`, {
+      method: "POST",
+      body: JSON.stringify({
+        quantity: Number(stockInForm.quantity),
+        note: stockInForm.note,
+      }),
+    });
+
+    setStockInForm({ inventoryId: "", quantity: "", note: "" });
+    await loadInventoryBundle();
+    pushToast("Nhập kho thành công", "Tồn kho đã được cập nhật");
+  };
+
+  const adjustInventory = async () => {
+    if (!adjustForm.inventoryId || !adjustForm.quantity) {
+      return alert("Chọn hàng hóa và nhập số điều chỉnh");
+    }
+
+    await api(`/api/inventory/${adjustForm.inventoryId}/adjust`, {
+      method: "POST",
+      body: JSON.stringify({
+        quantity: Number(adjustForm.quantity),
+        note: adjustForm.note,
+      }),
+    });
+
+    setAdjustForm({ inventoryId: "", quantity: "", note: "" });
+    await loadInventoryBundle();
+    pushToast("Điều chỉnh thành công", "Tồn kho đã được cập nhật");
+  };
+
+  const deleteInventoryItem = async (id) => {
+    if (!window.confirm("Xóa hàng hóa này?")) return;
+    await api(`/api/inventory/${id}`, { method: "DELETE" });
+    await loadInventoryBundle();
+    pushToast("Đã xóa hàng", "Hàng hóa đã được xóa");
+  };
+
+  const addRecipeRow = () => {
+    setRecipeDraftRows((prev) => [...prev, { inventoryId: "", qtyPerUnit: "" }]);
+  };
+
+  const updateRecipeRow = (index, key, value) => {
+    setRecipeDraftRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [key]: value } : row))
+    );
+  };
+
+  const deleteRecipeRow = (index) => {
+    setRecipeDraftRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const saveRecipe = async () => {
+    if (!selectedRecipeMenuId) {
+      return alert("Chọn món cần thiết lập công thức");
+    }
+
+    const normalized = recipeDraftRows
+      .filter((r) => r.inventoryId && Number(r.qtyPerUnit) > 0)
+      .map((r) => ({
+        inventoryId: r.inventoryId,
+        qtyPerUnit: Number(r.qtyPerUnit),
+      }));
+
+    await api(`/api/recipes/${selectedRecipeMenuId}`, {
+      method: "PUT",
+      body: JSON.stringify({ items: normalized }),
+    });
+
+    const updatedRecipes = await api("/api/recipes");
+    setRecipes(updatedRecipes);
+    pushToast("Đã lưu công thức", "Công thức món đã được cập nhật");
   };
 
   const logout = () => {
@@ -781,6 +1067,15 @@ export default function App() {
           >
             <BarChart3 size={16} /> Báo cáo
           </button>
+
+          {isAdmin && (
+            <button
+              className={tab === "inventory" ? "tab active" : "tab"}
+              onClick={() => setTab("inventory")}
+            >
+              <Boxes size={16} /> Kho hàng
+            </button>
+          )}
 
           {isAdmin && (
             <button
@@ -1080,6 +1375,427 @@ export default function App() {
                 ))}
               </div>
             </div>
+          </section>
+        )}
+
+        {tab === "inventory" && isAdmin && (
+          <section className="stack no-print">
+            <div className="tabs sub-tabs">
+              <button
+                className={inventoryTab === "stock" ? "tab active" : "tab"}
+                onClick={() => setInventoryTab("stock")}
+              >
+                <Boxes size={16} /> Tồn kho
+              </button>
+              <button
+                className={inventoryTab === "import" ? "tab active" : "tab"}
+                onClick={() => setInventoryTab("import")}
+              >
+                <PackagePlus size={16} /> Nhập / Điều chỉnh
+              </button>
+              <button
+                className={inventoryTab === "recipe" ? "tab active" : "tab"}
+                onClick={() => setInventoryTab("recipe")}
+              >
+                <Wrench size={16} /> Công thức món
+              </button>
+              <button
+                className={inventoryTab === "history" ? "tab active" : "tab"}
+                onClick={() => setInventoryTab("history")}
+              >
+                <ClipboardList size={16} /> Lịch sử kho
+              </button>
+            </div>
+
+            {inventoryTab === "stock" && (
+              <section className="manage-grid">
+                <div className="card">
+                  <SectionTitle
+                    icon={<PackagePlus size={18} />}
+                    title="Thêm hàng hóa kho"
+                  />
+                  <InventoryItemEditor
+                    draft={draftInventory}
+                    setDraft={setDraftInventory}
+                    onSubmit={addInventoryItem}
+                    submitText="Thêm hàng"
+                  />
+                </div>
+
+                <div className="card">
+                  <SectionTitle
+                    icon={<AlertTriangle size={18} />}
+                    title="Cảnh báo tồn thấp"
+                  />
+                  <div className="stack">
+                    <div className="report-stat">
+                      <span>Tổng hàng hóa</span>
+                      <strong>{inventoryReport.totalItems || 0}</strong>
+                    </div>
+                    <div className="report-stat">
+                      <span>Sắp hết hàng</span>
+                      <strong>{inventoryReport.lowStockCount || 0}</strong>
+                    </div>
+
+                    {(inventoryReport.lowStock || []).length === 0 && (
+                      <div className="muted">Không có mặt hàng nào sắp hết.</div>
+                    )}
+
+                    {(inventoryReport.lowStock || []).slice(0, 8).map((item) => (
+                      <div key={item.id} className="manage-row">
+                        <div>
+                          <div className="fw700">{item.name}</div>
+                          <div className="muted small">
+                            Tồn: {item.quantity} {item.unit} • Mốc thấp:{" "}
+                            {item.minQuantity} {item.unit}
+                          </div>
+                        </div>
+                        <div className="status on low-status">Thiếu hàng</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card manage-wide">
+                  <SectionTitle
+                    icon={<Boxes size={18} />}
+                    title="Danh sách tồn kho hiện tại"
+                    right={
+                      <button className="btn outline small-btn" onClick={loadInventoryBundle}>
+                        Tải lại
+                      </button>
+                    }
+                  />
+                  <div className="stack">
+                    {inventory.length === 0 && (
+                      <div className="muted">Chưa có hàng hóa trong kho.</div>
+                    )}
+
+                    {inventory.map((item) => (
+                      <div key={item.id} className="manage-row">
+                        <div>
+                          <div className="fw700">
+                            {item.name}{" "}
+                            {lowStockIds.has(item.id) && (
+                              <span className="inventory-warning-inline">
+                                • Sắp hết
+                              </span>
+                            )}
+                          </div>
+                          <div className="muted small">
+                            Tồn: {item.quantity} {item.unit} • Giá vốn:{" "}
+                            {money(item.unitCost)} • Mức thấp: {item.minQuantity}{" "}
+                            {item.unit}
+                          </div>
+                          {item.note ? (
+                            <div className="muted small">{item.note}</div>
+                          ) : null}
+                        </div>
+                        <div className="row-actions">
+                          <button
+                            className="btn danger small-btn"
+                            onClick={() => deleteInventoryItem(item.id)}
+                          >
+                            <Trash2 size={14} /> Xóa
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {inventoryTab === "import" && (
+              <section className="manage-grid">
+                <div className="card">
+                  <SectionTitle
+                    icon={<PackagePlus size={18} />}
+                    title="Nhập thêm hàng"
+                  />
+                  <div className="stack">
+                    <select
+                      className="input"
+                      value={stockInForm.inventoryId}
+                      onChange={(e) =>
+                        setStockInForm({
+                          ...stockInForm,
+                          inventoryId: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Chọn hàng hóa</option>
+                      {inventory.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.quantity} {item.unit})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      className="input"
+                      type="number"
+                      placeholder="Số lượng nhập"
+                      value={stockInForm.quantity}
+                      onChange={(e) =>
+                        setStockInForm({
+                          ...stockInForm,
+                          quantity: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      className="input"
+                      placeholder="Ghi chú nhập kho"
+                      value={stockInForm.note}
+                      onChange={(e) =>
+                        setStockInForm({
+                          ...stockInForm,
+                          note: e.target.value,
+                        })
+                      }
+                    />
+
+                    <button className="btn primary" onClick={stockInInventory}>
+                      <PackagePlus size={16} /> Nhập kho
+                    </button>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <SectionTitle
+                    icon={<Wrench size={18} />}
+                    title="Điều chỉnh tồn kho"
+                  />
+                  <div className="stack">
+                    <select
+                      className="input"
+                      value={adjustForm.inventoryId}
+                      onChange={(e) =>
+                        setAdjustForm({
+                          ...adjustForm,
+                          inventoryId: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Chọn hàng hóa</option>
+                      {inventory.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.quantity} {item.unit})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      className="input"
+                      type="number"
+                      placeholder="Số điều chỉnh (+ tăng / - giảm)"
+                      value={adjustForm.quantity}
+                      onChange={(e) =>
+                        setAdjustForm({
+                          ...adjustForm,
+                          quantity: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      className="input"
+                      placeholder="Ghi chú điều chỉnh"
+                      value={adjustForm.note}
+                      onChange={(e) =>
+                        setAdjustForm({
+                          ...adjustForm,
+                          note: e.target.value,
+                        })
+                      }
+                    />
+
+                    <button className="btn primary" onClick={adjustInventory}>
+                      <Save size={16} /> Điều chỉnh tồn
+                    </button>
+                  </div>
+                </div>
+
+                <div className="card manage-wide">
+                  <SectionTitle
+                    icon={<ClipboardList size={18} />}
+                    title="Tồn kho nhanh"
+                  />
+                  <div className="simple-table-wrap">
+                    <table className="simple-table">
+                      <thead>
+                        <tr>
+                          <th>Hàng hóa</th>
+                          <th>Tồn</th>
+                          <th>ĐVT</th>
+                          <th>Mức thấp</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventory.map((item) => (
+                          <tr key={item.id}>
+                            <td>
+                              {item.name}
+                              {lowStockIds.has(item.id) ? (
+                                <span className="table-badge danger">Sắp hết</span>
+                              ) : null}
+                            </td>
+                            <td>{item.quantity}</td>
+                            <td>{item.unit}</td>
+                            <td>{item.minQuantity}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {inventoryTab === "recipe" && (
+              <section className="manage-grid">
+                <div className="card">
+                  <SectionTitle
+                    icon={<Coffee size={18} />}
+                    title="Chọn món cần cấu hình công thức"
+                  />
+                  <div className="stack">
+                    <select
+                      className="input"
+                      value={selectedRecipeMenuId}
+                      onChange={(e) => setSelectedRecipeMenuId(e.target.value)}
+                    >
+                      <option value="">Chọn món</option>
+                      {menu.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button className="btn outline" onClick={addRecipeRow}>
+                      <Plus size={16} /> Thêm dòng nguyên liệu
+                    </button>
+
+                    <button className="btn primary" onClick={saveRecipe}>
+                      <Save size={16} /> Lưu công thức
+                    </button>
+                  </div>
+                </div>
+
+                <div className="card manage-wide">
+                  <SectionTitle
+                    icon={<Wrench size={18} />}
+                    title="Công thức nguyên liệu"
+                  />
+                  <div className="stack">
+                    {recipeDraftRows.length === 0 && (
+                      <div className="muted">
+                        Chưa có nguyên liệu. Bấm "Thêm dòng nguyên liệu".
+                      </div>
+                    )}
+
+                    {recipeDraftRows.map((row, index) => (
+                      <div key={index} className="recipe-row">
+                        <select
+                          className="input"
+                          value={row.inventoryId}
+                          onChange={(e) =>
+                            updateRecipeRow(index, "inventoryId", e.target.value)
+                          }
+                        >
+                          <option value="">Chọn hàng hóa kho</option>
+                          {inventory.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name} ({item.quantity} {item.unit})
+                            </option>
+                          ))}
+                        </select>
+
+                        <input
+                          className="input"
+                          type="number"
+                          placeholder="Số lượng dùng cho 1 món"
+                          value={row.qtyPerUnit}
+                          onChange={(e) =>
+                            updateRecipeRow(index, "qtyPerUnit", e.target.value)
+                          }
+                        />
+
+                        <button
+                          className="btn danger small-btn"
+                          onClick={() => deleteRecipeRow(index)}
+                        >
+                          <Trash2 size={14} /> Xóa
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card manage-wide">
+                  <SectionTitle
+                    icon={<ClipboardList size={18} />}
+                    title="Danh sách công thức hiện có"
+                  />
+                  <div className="stack">
+                    {recipes.map((recipe) => (
+                      <div key={recipe.menuId} className="recipe-summary-card">
+                        <div className="fw700">{recipe.menuName}</div>
+                        {(recipe.items || []).length === 0 ? (
+                          <div className="muted small">Chưa có công thức</div>
+                        ) : (
+                          <div className="recipe-chip-wrap">
+                            {recipe.items.map((item, idx) => (
+                              <span className="recipe-chip" key={idx}>
+                                {item.inventoryName}: {item.qtyPerUnit} {item.unit}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {inventoryTab === "history" && (
+              <section className="card">
+                <SectionTitle
+                  icon={<ClipboardList size={18} />}
+                  title="Lịch sử nhập / xuất / điều chỉnh kho"
+                />
+                <div className="simple-table-wrap">
+                  <table className="simple-table">
+                    <thead>
+                      <tr>
+                        <th>Thời gian</th>
+                        <th>Loại</th>
+                        <th>Hàng hóa</th>
+                        <th>Số lượng</th>
+                        <th>Ghi chú</th>
+                        <th>Người thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inventoryTransactions.map((tx) => (
+                        <tr key={tx.id}>
+                          <td>{formatTime(tx.createdAt)}</td>
+                          <td>{tx.type}</td>
+                          <td>{tx.inventoryName}</td>
+                          <td>{tx.quantity}</td>
+                          <td>{tx.note}</td>
+                          <td>{tx.createdBy}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </section>
         )}
 
