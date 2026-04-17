@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = "https://kiotb38.onrender.com";
 
 export default function App() {
   const [username, setUsername] = useState("admin");
@@ -9,6 +8,17 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [loggedInUser, setLoggedInUser] = useState(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("forever_pos_user");
+    if (savedUser) {
+      try {
+        setLoggedInUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem("forever_pos_user");
+      }
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,23 +29,31 @@ export default function App() {
       const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           username,
-          password
-        })
+          password,
+        }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data = {};
+
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || "Backend không trả về JSON hợp lệ");
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Đăng nhập thất bại");
       }
 
-      localStorage.setItem("forever_pos_token", data.token);
-      localStorage.setItem("forever_pos_user", JSON.stringify(data.user));
-      setLoggedInUser(data.user);
+      localStorage.setItem("forever_pos_token", data.token || "");
+      localStorage.setItem("forever_pos_user", JSON.stringify(data.user || {}));
+      setLoggedInUser(data.user || null);
     } catch (err) {
       setError(err.message || "Failed to fetch");
     } finally {
@@ -49,6 +67,7 @@ export default function App() {
     setLoggedInUser(null);
     setUsername("admin");
     setPassword("123456");
+    setError("");
   };
 
   if (loggedInUser) {
@@ -56,12 +75,23 @@ export default function App() {
       <div style={styles.page}>
         <div style={styles.card}>
           <div style={styles.watermark}>FOREVER</div>
+
           <h1 style={styles.title}>FOREVER POS PRO</h1>
           <p style={styles.subtitle}>Đăng nhập thành công</p>
 
           <div style={styles.successBox}>
-            <p><strong>Tài khoản:</strong> {loggedInUser.username}</p>
-            <p><strong>Vai trò:</strong> {loggedInUser.role}</p>
+            <div style={styles.successRow}>
+              <span style={styles.label}>Tài khoản:</span>
+              <span>{loggedInUser.username || "N/A"}</span>
+            </div>
+            <div style={styles.successRow}>
+              <span style={styles.label}>Vai trò:</span>
+              <span>{loggedInUser.role || "N/A"}</span>
+            </div>
+            <div style={styles.successRow}>
+              <span style={styles.label}>API:</span>
+              <span style={styles.apiText}>{API_URL}</span>
+            </div>
           </div>
 
           <button style={styles.button} onClick={handleLogout}>
@@ -87,6 +117,7 @@ export default function App() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
+            autoComplete="username"
           />
 
           <input
@@ -95,6 +126,7 @@ export default function App() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={styles.input}
+            autoComplete="current-password"
           />
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
@@ -121,7 +153,7 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     padding: "24px",
-    fontFamily: "Arial, sans-serif"
+    fontFamily: "Arial, sans-serif",
   },
   card: {
     width: "100%",
@@ -130,25 +162,27 @@ const styles = {
     borderRadius: "28px",
     padding: "48px",
     position: "relative",
-    boxSizing: "border-box"
+    boxSizing: "border-box",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
   },
   watermark: {
     fontSize: "88px",
     fontWeight: "800",
     color: "#dcd9d7",
     lineHeight: 1,
-    marginBottom: "40px"
+    marginBottom: "40px",
+    letterSpacing: "2px",
   },
   title: {
     fontSize: "52px",
     fontWeight: "800",
     color: "#1f1818",
-    margin: "0 0 18px 0"
+    margin: "0 0 18px 0",
   },
   subtitle: {
     fontSize: "28px",
     color: "#524c4a",
-    marginBottom: "36px"
+    marginBottom: "36px",
   },
   input: {
     width: "100%",
@@ -160,7 +194,7 @@ const styles = {
     marginBottom: "20px",
     boxSizing: "border-box",
     outline: "none",
-    background: "#f8f7f6"
+    background: "#f8f7f6",
   },
   errorBox: {
     background: "#f7d8d8",
@@ -168,15 +202,27 @@ const styles = {
     fontSize: "24px",
     padding: "22px",
     borderRadius: "22px",
-    marginBottom: "20px"
+    marginBottom: "20px",
   },
   successBox: {
     background: "#dff1df",
     color: "#1f5f1f",
-    fontSize: "24px",
+    fontSize: "22px",
     padding: "22px",
     borderRadius: "22px",
-    marginBottom: "24px"
+    marginBottom: "24px",
+    lineHeight: 1.7,
+  },
+  successRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+  label: {
+    fontWeight: "700",
+  },
+  apiText: {
+    wordBreak: "break-all",
   },
   button: {
     width: "100%",
@@ -187,13 +233,13 @@ const styles = {
     color: "#fff",
     fontSize: "34px",
     fontWeight: "700",
-    cursor: "pointer"
+    cursor: "pointer",
   },
   demoInfo: {
     marginTop: "42px",
     fontSize: "26px",
     lineHeight: 1.7,
     color: "#585250",
-    fontWeight: "700"
-  }
+    fontWeight: "700",
+  },
 };
