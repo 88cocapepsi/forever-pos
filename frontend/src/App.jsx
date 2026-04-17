@@ -31,11 +31,7 @@ const DEFAULT_MENU = [
     price: 25000,
     category: "Cà phê",
     active: true,
-    recipe: [
-      { sku: "cf_hat", qty: 18, unit: "g" },
-      { sku: "duong", qty: 8, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "cf_sua",
@@ -43,11 +39,7 @@ const DEFAULT_MENU = [
     price: 30000,
     category: "Cà phê",
     active: true,
-    recipe: [
-      { sku: "cf_hat", qty: 18, unit: "g" },
-      { sku: "sua_dac", qty: 25, unit: "ml" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "bac_xiu",
@@ -55,12 +47,7 @@ const DEFAULT_MENU = [
     price: 35000,
     category: "Cà phê",
     active: true,
-    recipe: [
-      { sku: "cf_hat", qty: 10, unit: "g" },
-      { sku: "sua_dac", qty: 35, unit: "ml" },
-      { sku: "sua_tuoi", qty: 80, unit: "ml" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "tra_dao",
@@ -68,12 +55,7 @@ const DEFAULT_MENU = [
     price: 35000,
     category: "Trà",
     active: true,
-    recipe: [
-      { sku: "tra_nen", qty: 12, unit: "g" },
-      { sku: "dao_ngam", qty: 40, unit: "g" },
-      { sku: "duong", qty: 12, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "tra_tac",
@@ -81,12 +63,7 @@ const DEFAULT_MENU = [
     price: 30000,
     category: "Trà",
     active: true,
-    recipe: [
-      { sku: "tra_nen", qty: 12, unit: "g" },
-      { sku: "tac", qty: 25, unit: "ml" },
-      { sku: "duong", qty: 12, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "tra_sua",
@@ -94,12 +71,7 @@ const DEFAULT_MENU = [
     price: 40000,
     category: "Trà sữa",
     active: true,
-    recipe: [
-      { sku: "tra_nen", qty: 12, unit: "g" },
-      { sku: "bot_sua", qty: 30, unit: "g" },
-      { sku: "duong", qty: 15, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "cacao_da",
@@ -107,12 +79,7 @@ const DEFAULT_MENU = [
     price: 38000,
     category: "Đá xay",
     active: true,
-    recipe: [
-      { sku: "bot_cacao", qty: 22, unit: "g" },
-      { sku: "sua_tuoi", qty: 100, unit: "ml" },
-      { sku: "duong", qty: 10, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "yaourt_da",
@@ -120,11 +87,7 @@ const DEFAULT_MENU = [
     price: 32000,
     category: "Khác",
     active: true,
-    recipe: [
-      { sku: "yaourt", qty: 1, unit: "hũ" },
-      { sku: "duong", qty: 8, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
   {
     id: "yaourt_vai",
@@ -132,28 +95,11 @@ const DEFAULT_MENU = [
     price: 28000,
     category: "Khác",
     active: true,
-    recipe: [
-      { sku: "yaourt", qty: 1, unit: "hũ" },
-      { sku: "vai_ngam", qty: 35, unit: "g" },
-      { sku: "da_vien", qty: 1, unit: "ly" },
-    ],
+    recipe: [],
   },
 ];
 
-const DEFAULT_INVENTORY = [
-  { sku: "cf_hat", name: "Cà phê hạt", stock: 5000, unit: "g", cost: 0 },
-  { sku: "tra_nen", name: "Trà nền", stock: 3000, unit: "g", cost: 0 },
-  { sku: "duong", name: "Đường", stock: 4000, unit: "g", cost: 0 },
-  { sku: "sua_dac", name: "Sữa đặc", stock: 3000, unit: "ml", cost: 0 },
-  { sku: "sua_tuoi", name: "Sữa tươi", stock: 5000, unit: "ml", cost: 0 },
-  { sku: "bot_sua", name: "Bột sữa", stock: 2000, unit: "g", cost: 0 },
-  { sku: "bot_cacao", name: "Bột cacao", stock: 1500, unit: "g", cost: 0 },
-  { sku: "dao_ngam", name: "Đào ngâm", stock: 2000, unit: "g", cost: 0 },
-  { sku: "vai_ngam", name: "Vải ngâm", stock: 1500, unit: "g", cost: 0 },
-  { sku: "tac", name: "Nước tắc", stock: 1200, unit: "ml", cost: 0 },
-  { sku: "yaourt", name: "Yaourt", stock: 100, unit: "hũ", cost: 0 },
-  { sku: "da_vien", name: "Đá viên", stock: 300, unit: "ly", cost: 0 },
-];
+const DEFAULT_INVENTORY = [];
 
 const DEFAULT_STAFF = [
   {
@@ -383,8 +329,14 @@ export default function App() {
     active: true,
   });
 
+  const [recipeDraft, setRecipeDraft] = useState({
+    inventoryId: "",
+    qty: "",
+  });
+
   const [inventoryForm, setInventoryForm] = useState({
-    sku: DEFAULT_INVENTORY[0].sku,
+    name: "",
+    unit: "",
     qty: "",
     cost: "",
   });
@@ -449,7 +401,7 @@ export default function App() {
     const result = await Notification.requestPermission();
     setNotificationPermission(result);
     if (result === "granted") {
-      pushNotification("Đã bật thông báo trình duyệt cho thiết bị này", "success");
+      pushNotification("Đã bật thông báo trình duyệt trên thiết bị này", "success");
     }
   };
 
@@ -539,13 +491,14 @@ export default function App() {
   const getTableItemCount = (tableName) =>
     (orders[tableName] || []).reduce((sum, item) => sum + item.qty, 0);
 
-  const getInventoryItem = (sku) => inventory.find((item) => item.sku === sku);
+  const getInventoryItemBySku = (sku) => inventory.find((item) => item.sku === sku);
+  const getInventoryItemById = (id) => inventory.find((item) => item.id === id);
 
   const getRequiredIngredients = (orderItems) => {
     const usageMap = {};
     orderItems.forEach((orderItem) => {
       const menu = menuItems.find((m) => m.id === orderItem.id);
-      if (!menu?.recipe) return;
+      if (!menu?.recipe || menu.recipe.length === 0) return;
       menu.recipe.forEach((r) => {
         usageMap[r.sku] = (usageMap[r.sku] || 0) + r.qty * orderItem.qty;
       });
@@ -556,7 +509,7 @@ export default function App() {
   const validateStockForOrder = (orderItems) => {
     const required = getRequiredIngredients(orderItems);
     for (const [sku, qtyNeeded] of Object.entries(required)) {
-      const inv = getInventoryItem(sku);
+      const inv = getInventoryItemBySku(sku);
       if (!inv || Number(inv.stock) < qtyNeeded) {
         return {
           ok: false,
@@ -797,7 +750,6 @@ export default function App() {
     }
 
     const mergedMap = {};
-
     [...target, ...source].forEach((item) => {
       if (!mergedMap[item.id]) {
         mergedMap[item.id] = { ...item };
@@ -814,7 +766,7 @@ export default function App() {
 
     setSelectedTable(tableMergeTarget);
     setTableMergeTarget("");
-    pushNotification(`Đã gộp ${selectedTable} vào ${tableMergeTarget}`, "success");
+    pushNotification(`Đã gộp bàn vào ${tableMergeTarget}`, "success");
   };
 
   const handleAddOrUpdateMenu = (e) => {
@@ -888,43 +840,180 @@ export default function App() {
     pushNotification("Đã xóa món", "info");
   };
 
-  const handleImportStock = (e) => {
-    e.preventDefault();
-    const qty = Number(inventoryForm.qty || 0);
-    const cost = Number(inventoryForm.cost || 0);
+  const addRecipeToMenu = (menuId) => {
+    const inv = getInventoryItemById(recipeDraft.inventoryId);
+    const qty = Number(recipeDraft.qty || 0);
 
-    if (!inventoryForm.sku || qty <= 0) {
-      pushNotification("Nhập số lượng hợp lệ", "warning");
+    if (!menuId || !inv || qty <= 0) {
+      pushNotification("Chọn nguyên liệu và số lượng hợp lệ", "warning");
       return;
     }
 
-    const target = inventory.find((i) => i.sku === inventoryForm.sku);
+    setMenuItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== menuId) return item;
 
-    setInventory((prev) =>
+        const existing = (item.recipe || []).find((r) => r.sku === inv.sku);
+        if (existing) {
+          return {
+            ...item,
+            recipe: item.recipe.map((r) =>
+              r.sku === inv.sku ? { ...r, qty } : r
+            ),
+          };
+        }
+
+        return {
+          ...item,
+          recipe: [
+            ...(item.recipe || []),
+            {
+              sku: inv.sku,
+              inventoryId: inv.id,
+              name: inv.name,
+              qty,
+              unit: inv.unit,
+            },
+          ],
+        };
+      })
+    );
+
+    setRecipeDraft({
+      inventoryId: "",
+      qty: "",
+    });
+
+    pushNotification("Đã thêm / cập nhật công thức nguyên liệu", "success");
+  };
+
+  const removeRecipeFromMenu = (menuId, sku) => {
+    setMenuItems((prev) =>
       prev.map((item) =>
-        item.sku === inventoryForm.sku
+        item.id === menuId
           ? {
               ...item,
-              stock: Number(item.stock) + qty,
-              cost: cost > 0 ? cost : item.cost,
+              recipe: (item.recipe || []).filter((r) => r.sku !== sku),
             }
           : item
       )
     );
+    pushNotification("Đã xóa nguyên liệu khỏi công thức", "info");
+  };
 
+  const handleImportStock = (e) => {
+    e.preventDefault();
+
+    const qty = Number(inventoryForm.qty || 0);
+    const cost = Number(inventoryForm.cost || 0);
+    const name = (inventoryForm.name || "").trim();
+    const unit = (inventoryForm.unit || "").trim();
+
+    if (!name) {
+      pushNotification("Vui lòng nhập tên hàng", "warning");
+      return;
+    }
+
+    if (!unit) {
+      pushNotification("Vui lòng nhập đơn vị tính", "warning");
+      return;
+    }
+
+    if (qty <= 0) {
+      pushNotification("Vui lòng nhập số lượng hợp lệ", "warning");
+      return;
+    }
+
+    const existing = inventory.find(
+      (item) => item.name.toLowerCase() === name.toLowerCase()
+    );
+
+    if (existing) {
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === existing.id
+            ? {
+                ...item,
+                stock: Number(item.stock) + qty,
+                cost: cost > 0 ? cost : item.cost,
+                unit,
+              }
+            : item
+        )
+      );
+
+      setStockLogs((prev) => [
+        {
+          id: uid("stock"),
+          type: "import",
+          note: `Nhập thêm hàng: ${name}`,
+          createdAt: new Date().toISOString(),
+          items: [{ sku: existing.sku, qty, cost }],
+        },
+        ...prev,
+      ]);
+
+      pushNotification(`Đã nhập thêm ${name}`, "success");
+    } else {
+      const newItem = {
+        id: uid("inv"),
+        sku: uid("sku"),
+        name,
+        stock: qty,
+        unit,
+        cost,
+      };
+
+      setInventory((prev) => [newItem, ...prev]);
+
+      setStockLogs((prev) => [
+        {
+          id: uid("stock"),
+          type: "create_and_import",
+          note: `Tạo mới hàng: ${name}`,
+          createdAt: new Date().toISOString(),
+          items: [{ sku: newItem.sku, qty, cost }],
+        },
+        ...prev,
+      ]);
+
+      pushNotification(`Đã tạo và nhập hàng mới: ${name}`, "success");
+    }
+
+    setInventoryForm({
+      name: "",
+      unit: "",
+      qty: "",
+      cost: "",
+    });
+  };
+
+  const deleteInventoryItem = (itemId) => {
+    const target = inventory.find((item) => item.id === itemId);
+    if (!target) return;
+
+    const usedInMenu = menuItems.some((menu) =>
+      (menu.recipe || []).some((r) => r.sku === target.sku)
+    );
+
+    if (usedInMenu) {
+      pushNotification("Hàng này đang được gán trong công thức món, hãy xóa công thức trước", "warning");
+      return;
+    }
+
+    setInventory((prev) => prev.filter((item) => item.id !== itemId));
     setStockLogs((prev) => [
       {
         id: uid("stock"),
-        type: "import",
-        note: `Nhập hàng: ${target?.name || inventoryForm.sku}`,
+        type: "delete_item",
+        note: `Xóa hàng khỏi kho: ${target.name}`,
         createdAt: new Date().toISOString(),
-        items: [{ sku: inventoryForm.sku, qty, cost }],
+        items: [{ sku: target.sku, qty: target.stock }],
       },
       ...prev,
     ]);
 
-    setInventoryForm((prev) => ({ ...prev, qty: "", cost: "" }));
-    pushNotification(`Đã nhập kho ${target?.name || ""}`, "success");
+    pushNotification(`Đã xóa hàng: ${target.name}`, "info");
   };
 
   const handleAddOrUpdateStaff = (e) => {
@@ -1108,11 +1197,7 @@ export default function App() {
               ["nhanvien", "Nhân viên"],
               ["baocao", "Báo cáo"],
             ]
-              .filter(
-                ([key]) =>
-                  isAdmin ||
-                  ["banhang", "hoadon"].includes(key)
-              )
+              .filter(([key]) => isAdmin || ["banhang", "hoadon"].includes(key))
               .map(([key, label]) => (
                 <button
                   key={key}
@@ -1451,6 +1536,79 @@ export default function App() {
                   </button>
                 </div>
               </form>
+
+              <div style={{ marginTop: 18 }}>
+                <h3 style={styles.sectionTitle}>Công thức nguyên liệu</h3>
+                <div style={styles.muted}>
+                  Gán nguyên liệu để khi bán sẽ tự trừ tồn kho
+                </div>
+              </div>
+
+              {menuForm.id ? (
+                <>
+                  <div style={styles.form2Col}>
+                    <select
+                      style={styles.compactInput}
+                      value={recipeDraft.inventoryId}
+                      onChange={(e) =>
+                        setRecipeDraft((prev) => ({
+                          ...prev,
+                          inventoryId: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Chọn hàng trong kho</option>
+                      {inventory.map((inv) => (
+                        <option key={inv.id} value={inv.id}>
+                          {inv.name} ({inv.unit})
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      style={styles.compactInput}
+                      type="number"
+                      placeholder="Số lượng dùng / 1 món"
+                      value={recipeDraft.qty}
+                      onChange={(e) =>
+                        setRecipeDraft((prev) => ({ ...prev, qty: e.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <button
+                    style={styles.primaryBtn}
+                    onClick={() => addRecipeToMenu(menuForm.id)}
+                  >
+                    Thêm / cập nhật công thức
+                  </button>
+
+                  <div style={{ marginTop: 12 }} className="recipe-list">
+                    {(menuItems.find((m) => m.id === menuForm.id)?.recipe || []).length === 0 ? (
+                      <div style={styles.emptyState}>Món này chưa có công thức.</div>
+                    ) : (
+                      (menuItems.find((m) => m.id === menuForm.id)?.recipe || []).map((r) => (
+                        <div key={r.sku} style={styles.listRow}>
+                          <div>
+                            <div style={styles.rowTitle}>{r.name || r.sku}</div>
+                            <div style={styles.rowSub}>
+                              {r.qty} {r.unit} / 1 món
+                            </div>
+                          </div>
+                          <button
+                            style={styles.smallActionBtnDanger}
+                            onClick={() => removeRecipeFromMenu(menuForm.id, r.sku)}
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div style={styles.emptyState}>Hãy bấm Sửa một món để gán công thức.</div>
+              )}
             </section>
 
             <section style={styles.card}>
@@ -1465,7 +1623,8 @@ export default function App() {
                       <div style={styles.rowTitle}>{item.name}</div>
                       <div style={styles.rowSub}>
                         {item.category} • {formatMoneyVND(item.price)} •{" "}
-                        {item.active ? "Đang bán" : "Đã ẩn"}
+                        {item.active ? "Đang bán" : "Đã ẩn"} •{" "}
+                        {(item.recipe || []).length} nguyên liệu
                       </div>
                     </div>
 
@@ -1497,23 +1656,28 @@ export default function App() {
           <div style={styles.twoCol}>
             <section style={styles.card}>
               <div style={styles.sectionTop}>
-                <h3 style={styles.sectionTitle}>Nhập hàng</h3>
+                <h3 style={styles.sectionTitle}>Nhập hàng thủ công</h3>
+                <div style={styles.muted}>Kho ban đầu trống, tự thêm tên hàng</div>
               </div>
 
               <form onSubmit={handleImportStock} style={styles.stackForm}>
-                <select
+                <input
                   style={styles.compactInput}
-                  value={inventoryForm.sku}
+                  placeholder="Tên hàng"
+                  value={inventoryForm.name}
                   onChange={(e) =>
-                    setInventoryForm((prev) => ({ ...prev, sku: e.target.value }))
+                    setInventoryForm((prev) => ({ ...prev, name: e.target.value }))
                   }
-                >
-                  {inventory.map((item) => (
-                    <option key={item.sku} value={item.sku}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                />
+
+                <input
+                  style={styles.compactInput}
+                  placeholder="Đơn vị tính (g, ml, chai, hộp...)"
+                  value={inventoryForm.unit}
+                  onChange={(e) =>
+                    setInventoryForm((prev) => ({ ...prev, unit: e.target.value }))
+                  }
+                />
 
                 <input
                   style={styles.compactInput}
@@ -1536,27 +1700,30 @@ export default function App() {
                 />
 
                 <button type="submit" style={styles.primaryBtn}>
-                  Nhập kho
+                  Thêm / nhập hàng
                 </button>
               </form>
 
-              <div style={styles.sectionTop}>
+              <div style={{ marginTop: 18 }}>
                 <h3 style={styles.sectionTitle}>Lịch sử kho</h3>
               </div>
+
               <div style={styles.listBox}>
-                {stockLogs.map((log) => (
-                  <div key={log.id} style={styles.listRow}>
-                    <div>
-                      <div style={styles.rowTitle}>{log.note}</div>
-                      <div style={styles.rowSub}>{formatDateTime(log.createdAt)}</div>
+                {stockLogs.length === 0 ? (
+                  <div style={styles.emptyState}>Chưa có lịch sử kho.</div>
+                ) : (
+                  stockLogs.map((log) => (
+                    <div key={log.id} style={styles.listRow}>
+                      <div>
+                        <div style={styles.rowTitle}>{log.note}</div>
+                        <div style={styles.rowSub}>{formatDateTime(log.createdAt)}</div>
+                      </div>
+                      <div style={styles.rowSub}>
+                        {log.items.map((x) => `${x.sku}: ${formatMoney(x.qty)}`).join(" • ")}
+                      </div>
                     </div>
-                    <div style={styles.rowSub}>
-                      {log.items
-                        .map((x) => `${x.sku}: ${formatMoney(x.qty)}`)
-                        .join(" • ")}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </section>
 
@@ -1565,28 +1732,41 @@ export default function App() {
                 <h3 style={styles.sectionTitle}>Tồn kho hiện tại</h3>
               </div>
 
-              <div style={styles.tableHeader4}>
-                <div>Nguyên liệu</div>
+              <div style={styles.tableHeader5}>
+                <div>Tên hàng</div>
                 <div>Tồn</div>
                 <div>ĐVT</div>
                 <div>Giá nhập</div>
+                <div>Thao tác</div>
               </div>
 
-              {inventory.map((item) => (
-                <div key={item.sku} style={styles.tableRow4}>
-                  <div>{item.name}</div>
-                  <div
-                    style={{
-                      color: Number(item.stock) <= 10 ? "#c62828" : "#2c1c14",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {formatMoney(item.stock)}
+              {inventory.length === 0 ? (
+                <div style={styles.emptyState}>Kho đang trống. Anh hãy tự thêm hàng.</div>
+              ) : (
+                inventory.map((item) => (
+                  <div key={item.id} style={styles.tableRow5}>
+                    <div>{item.name}</div>
+                    <div
+                      style={{
+                        color: Number(item.stock) <= 10 ? "#c62828" : "#2c1c14",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formatMoney(item.stock)}
+                    </div>
+                    <div>{item.unit}</div>
+                    <div>{formatMoney(item.cost)}</div>
+                    <div>
+                      <button
+                        style={styles.smallActionBtnDanger}
+                        onClick={() => deleteInventoryItem(item.id)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
                   </div>
-                  <div>{item.unit}</div>
-                  <div>{formatMoney(item.cost)}</div>
-                </div>
-              ))}
+                ))
+              )}
             </section>
           </div>
         )}
@@ -1801,7 +1981,7 @@ export default function App() {
               <div style={styles.listBox}>
                 {shiftRevenue.map((item) => (
                   <div key={item.shift} style={styles.listRow}>
-                    <div className="left">
+                    <div>
                       <div style={styles.rowTitle}>{item.shift}</div>
                     </div>
                     <div style={styles.reportMiniValue}>{formatMoneyVND(item.total)}</div>
@@ -2159,6 +2339,9 @@ const styles = {
   emptyState: {
     color: "#7d7169",
     padding: 14,
+    background: "#fff",
+    borderRadius: 14,
+    border: "1px dashed #ddd1ca",
   },
   orderRow: {
     display: "grid",
@@ -2352,9 +2535,9 @@ const styles = {
     cursor: "pointer",
     fontWeight: 700,
   },
-  tableHeader4: {
+  tableHeader5: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr 100px",
     gap: 10,
     padding: 14,
     background: "#f1e5dc",
@@ -2363,9 +2546,9 @@ const styles = {
     color: "#241816",
     marginBottom: 8,
   },
-  tableRow4: {
+  tableRow5: {
     display: "grid",
-    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr 100px",
     gap: 10,
     padding: 14,
     background: "#fff",
