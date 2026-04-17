@@ -1,48 +1,60 @@
-import http from 'http';
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { Server } from 'socket.io';
-
-import { env } from './config/env.js';
-import healthRouter from './routes/health.js';
-import authRouter from './routes/auth.js';
-import productsRouter from './routes/products.js';
-import tablesRouter from './routes/tables.js';
-import createOrdersRouter from './routes/orders.js';
-import reportsRouter from './routes/reports.js';
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: env.corsOrigins,
-    credentials: true,
-  },
-});
 
-app.use(helmet());
-app.use(cors({ origin: env.corsOrigins, credentials: true }));
+app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
 
-app.get('/', (_req, res) => {
-  res.json({ service: 'FOREVER POS PRO API', ok: true });
+const PORT = process.env.PORT || 5000;
+
+// Health check
+app.get("/", (req, res) => {
+  res.send("FOREVER POS Backend is running");
 });
 
-app.use('/api', healthRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/products', productsRouter);
-app.use('/api/tables', tablesRouter);
-app.use('/api/orders', createOrdersRouter(io));
-app.use('/api/reports', reportsRouter);
+// Demo login
+app.post("/api/auth/login", (req, res) => {
+  try {
+    const { username, password } = req.body || {};
 
-io.on('connection', socket => {
-  console.log('socket connected', socket.id);
-  socket.on('disconnect', () => console.log('socket disconnected', socket.id));
+    if (username === "admin" && password === "123456") {
+      return res.status(200).json({
+        success: true,
+        token: "demo-admin-token",
+        user: {
+          username: "admin",
+          role: "admin",
+          name: "Administrator",
+        },
+      });
+    }
+
+    if (username === "staff" && password === "123456") {
+      return res.status(200).json({
+        success: true,
+        token: "demo-staff-token",
+        user: {
+          username: "staff",
+          role: "staff",
+          name: "Staff",
+        },
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Sai tài khoản hoặc mật khẩu",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi máy chủ",
+      error: error.message,
+    });
+  }
 });
 
-server.listen(env.port, () => {
-  console.log(`FOREVER POS backend listening on http://localhost:${env.port}`);
+app.listen(PORT, () => {
+  console.log(`FOREVER POS Backend running on port ${PORT}`);
 });
