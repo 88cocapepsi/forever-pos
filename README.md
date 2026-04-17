@@ -1,54 +1,95 @@
-# FOREVER POS Browser Internet Complete
+# FOREVER POS PRO Production
 
-Bản này được tối ưu để chạy trên trình duyệt và dễ cài hơn trên Mac/Windows vì backend **không dùng native module**.
+Bản production web POS cho quán cà phê, dùng qua trình duyệt internet.
 
-## Công nghệ
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: `db.json` lưu file JSON
-- Auth: JWT
-- Phân quyền: admin / cashier
+## Stack
+- Frontend: React + Vite + Tailwind + Socket.IO Client + PWA
+- Backend: Node.js + Express + PostgreSQL + Socket.IO + JWT
+- Database: PostgreSQL
+- Deploy gợi ý:
+  - Backend: Render / Railway / VPS
+  - Frontend: Netlify / Vercel
+  - Database: Neon / Supabase Postgres / Render Postgres
 
-## Tính năng
-- Đăng nhập
-- Quản lý bàn
-- Lưu đơn đang phục vụ
-- Thanh toán
-- Báo cáo hôm nay
-- Quản lý menu
-- Quản lý tài khoản
-- Chạy trên trình duyệt internet
+## Chức năng hiện có trong source
+- Đăng nhập JWT, phân quyền `admin` / `staff`
+- 10 bàn + mang về + giao đi
+- Tạo order, thêm món, cập nhật số lượng
+- Thanh toán hóa đơn
+- Realtime đồng bộ order qua Socket.IO
+- Notification bill realtime trong web app
+- Báo cáo doanh thu ngày
+- Quản lý sản phẩm cơ bản
+- Nhật ký thao tác cơ bản
+- PWA nền để cài lên iPhone
 
-## Chạy local
-### Backend
+## 1. Backend
 ```bash
 cd backend
+cp .env.example .env
+npm install
+npm run db:init
+npm run dev
+```
+
+Backend chạy mặc định: `http://localhost:4000`
+
+## 2. Frontend
+```bash
+cd frontend
+cp .env.example .env
 npm install
 npm run dev
+```
+
+Frontend chạy mặc định: `http://localhost:5173`
+
+## Tài khoản mẫu sau khi init DB
+- admin / 123456
+- staff / 123456
+
+## Biến môi trường backend
+Xem `backend/.env.example`
+
+## Biến môi trường frontend
+Xem `frontend/.env.example`
+
+## PostgreSQL local nhanh bằng Docker
+```bash
+docker run --name forever-pos-db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=forever_pos \
+  -p 5432:5432 -d postgres:16
+```
+
+## Deploy production
+### Backend
+- Tạo database Postgres
+- Set env theo `.env.example`
+- Chạy:
+```bash
+npm install
+npm run db:init
+npm start
 ```
 
 ### Frontend
-Mở terminal thứ 2:
+- Set `VITE_API_BASE=https://your-backend-domain/api`
+- Set `VITE_SOCKET_URL=https://your-backend-domain`
+- Build:
 ```bash
-cd frontend
 npm install
-npm run dev
+npm run build
 ```
 
-Mở:
-```bash
-http://localhost:5173
-```
+## Push notification iPhone
+Source đã có nền PWA + notification trong app.
+Để push nền thực sự trên iPhone cần:
+- domain HTTPS thật
+- user mở bằng Safari
+- Add to Home Screen
+- service worker hoạt động
+- tích hợp VAPID/Web Push server nếu muốn đẩy khi app không mở
 
-## Tài khoản mặc định
-- admin / 123456
-- thungan / 123456
-
-## Deploy internet
-- Frontend: Vercel / Netlify
-- Backend: Render / Railway / VPS
-- Sửa `frontend/.env` thành URL backend thật
-
-## Lưu ý
-- Bản này lưu dữ liệu vào file `backend/db.json`
-- Để chạy internet ổn định lâu dài, bước sau nên đổi sang PostgreSQL hoặc MySQL
+Bản source này đã chuẩn bị kiến trúc cho giai đoạn đó nhưng hiện mặc định dùng realtime in-app notifications để ổn định hơn.
