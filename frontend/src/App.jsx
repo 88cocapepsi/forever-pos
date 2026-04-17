@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "https://kiotb38.onrender.com";
+const API_URL = "https://forever-pos.onrender.com";
 
 export default function App() {
   const [username, setUsername] = useState("admin");
@@ -14,7 +14,7 @@ export default function App() {
     if (savedUser) {
       try {
         setLoggedInUser(JSON.parse(savedUser));
-      } catch (e) {
+      } catch {
         localStorage.removeItem("forever_pos_user");
       }
     }
