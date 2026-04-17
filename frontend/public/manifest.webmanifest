@@ -1,0 +1,9 @@
+{
+  "name": "FOREVER POS PRO",
+  "short_name": "FOREVER POS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f4",
+  "theme_color": "#6f4524",
+  "icons": []
+}

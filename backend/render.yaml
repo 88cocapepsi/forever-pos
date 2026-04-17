@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: forever-pos-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run db:init && npm start
