@@ -4,7 +4,7 @@ const API_URL = "https://forever-pos.onrender.com";
 
 const STORE_INFO = {
   name: "FOREVER COFFEE & BEER",
-  address1: "B48 đường 4A",
+  address1: "B38 đường 4A",
   address2: "P. Tân Hưng, Q.7",
   phone: "0788880891",
 };
@@ -335,7 +335,6 @@ export default function App() {
   });
 
   const [inventoryForm, setInventoryForm] = useState({
-    id: "",
     name: "",
     unit: "",
     qty: "",
@@ -902,7 +901,7 @@ export default function App() {
     pushNotification("Đã xóa nguyên liệu khỏi công thức", "info");
   };
 
-  const handleSaveInventory = (e) => {
+  const handleImportStock = (e) => {
     e.preventDefault();
 
     const qty = Number(inventoryForm.qty || 0);
@@ -920,126 +919,73 @@ export default function App() {
       return;
     }
 
-    if (qty < 0) {
-      pushNotification("Số lượng tồn không hợp lệ", "warning");
+    if (qty <= 0) {
+      pushNotification("Vui lòng nhập số lượng hợp lệ", "warning");
       return;
     }
 
-    if (inventoryForm.id) {
-      // Trường hợp ĐANG SỬA một mặt hàng có sẵn
-      const target = inventory.find((item) => item.id === inventoryForm.id);
-      if (!target) return;
+    const existing = inventory.find(
+      (item) => item.name.toLowerCase() === name.toLowerCase()
+    );
 
-      const oldStock = target.stock;
-
+    if (existing) {
       setInventory((prev) =>
         prev.map((item) =>
-          item.id === inventoryForm.id
-            ? { ...item, name, unit, stock: qty, cost }
+          item.id === existing.id
+            ? {
+                ...item,
+                stock: Number(item.stock) + qty,
+                cost: cost > 0 ? cost : item.cost,
+                unit,
+              }
             : item
         )
-      );
-
-      // Cập nhật lại thông tin tên / đơn vị hiển thị trong công thức (Recipe) của các món nếu có thay đổi
-      setMenuItems((prev) =>
-        prev.map((menu) => ({
-          ...menu,
-          recipe: (menu.recipe || []).map((r) =>
-            r.inventoryId === inventoryForm.id ? { ...r, name, unit } : r
-          ),
-        }))
       );
 
       setStockLogs((prev) => [
         {
           id: uid("stock"),
-          type: "update_item",
-          note: `Cập nhật hàng: ${name} (Cập nhật tồn từ ${oldStock} thành ${qty})`,
+          type: "import",
+          note: `Nhập thêm hàng: ${name}`,
           createdAt: new Date().toISOString(),
-          items: [{ sku: target.sku, qty, cost }],
+          items: [{ sku: existing.sku, qty, cost }],
         },
         ...prev,
       ]);
 
-      pushNotification(`Đã cập nhật thông tin kho cho ${name}`, "success");
+      pushNotification(`Đã nhập thêm ${name}`, "success");
     } else {
-      // Trường hợp THÊM MỚI (hoặc nhập thêm bằng cách gõ trùng tên cũ)
-      const existing = inventory.find(
-        (item) => item.name.toLowerCase() === name.toLowerCase()
-      );
+      const newItem = {
+        id: uid("inv"),
+        sku: uid("sku"),
+        name,
+        stock: qty,
+        unit,
+        cost,
+      };
 
-      if (existing) {
-        setInventory((prev) =>
-          prev.map((item) =>
-            item.id === existing.id
-              ? {
-                  ...item,
-                  stock: Number(item.stock) + qty,
-                  cost: cost > 0 ? cost : item.cost,
-                  unit,
-                }
-              : item
-          )
-        );
+      setInventory((prev) => [newItem, ...prev]);
 
-        setStockLogs((prev) => [
-          {
-            id: uid("stock"),
-            type: "import",
-            note: `Nhập thêm hàng: ${name}`,
-            createdAt: new Date().toISOString(),
-            items: [{ sku: existing.sku, qty, cost }],
-          },
-          ...prev,
-        ]);
+      setStockLogs((prev) => [
+        {
+          id: uid("stock"),
+          type: "create_and_import",
+          note: `Tạo mới hàng: ${name}`,
+          createdAt: new Date().toISOString(),
+          items: [{ sku: newItem.sku, qty, cost }],
+        },
+        ...prev,
+      ]);
 
-        pushNotification(`Đã nhập thêm ${name}`, "success");
-      } else {
-        const newItem = {
-          id: uid("inv"),
-          sku: uid("sku"),
-          name,
-          stock: qty,
-          unit,
-          cost,
-        };
-
-        setInventory((prev) => [newItem, ...prev]);
-
-        setStockLogs((prev) => [
-          {
-            id: uid("stock"),
-            type: "create_and_import",
-            note: `Tạo mới hàng: ${name}`,
-            createdAt: new Date().toISOString(),
-            items: [{ sku: newItem.sku, qty, cost }],
-          },
-          ...prev,
-        ]);
-
-        pushNotification(`Đã tạo và nhập hàng mới: ${name}`, "success");
-      }
+      pushNotification(`Đã tạo và nhập hàng mới: ${name}`, "success");
     }
 
     setInventoryForm({
-      id: "",
       name: "",
       unit: "",
       qty: "",
       cost: "",
     });
-  };
-
-  const editInventoryItem = (item) => {
-    setInventoryForm({
-      id: item.id,
-      name: item.name,
-      unit: item.unit,
-      qty: item.stock,
-      cost: item.cost,
-    });
-    // Cuộn mượt màn hình lên đầu khu vực form để dễ nhập liệu trên điện thoại
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deleteInventoryItem = (itemId) => {
@@ -1068,10 +1014,6 @@ export default function App() {
     ]);
 
     pushNotification(`Đã xóa hàng: ${target.name}`, "info");
-
-    if (inventoryForm.id === itemId) {
-      setInventoryForm({ id: "", name: "", unit: "", qty: "", cost: "" });
-    }
   };
 
   const handleAddOrUpdateStaff = (e) => {
@@ -1510,18 +1452,21 @@ export default function App() {
                 </select>
               </div>
 
-              <div style={styles.menuGrid}>
-                {filteredMenu.map((item) => (
-                  <button
-                    key={item.id}
-                    style={styles.menuCard}
-                    onClick={() => addItemToOrder(item)}
-                  >
-                    <div style={styles.menuTitle}>{item.name}</div>
-                    <div style={styles.menuCat}>{item.category}</div>
-                    <div style={styles.menuPrice}>{formatMoneyVND(item.price)}</div>
-                  </button>
-                ))}
+              {/* Khu vực danh sách sản phẩm đã được thêm thanh trượt cuộn và thu gọn */}
+              <div style={styles.menuScrollContainer}>
+                <div style={styles.menuGrid}>
+                  {filteredMenu.map((item) => (
+                    <button
+                      key={item.id}
+                      style={styles.menuCard}
+                      onClick={() => addItemToOrder(item)}
+                    >
+                      <div style={styles.menuTitle}>{item.name}</div>
+                      <div style={styles.menuCat}>{item.category}</div>
+                      <div style={styles.menuPrice}>{formatMoneyVND(item.price)}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </section>
           </div>
@@ -1714,15 +1659,11 @@ export default function App() {
           <div style={styles.twoCol}>
             <section style={styles.card}>
               <div style={styles.sectionTop}>
-                <h3 style={styles.sectionTitle}>
-                  {inventoryForm.id ? "Sửa hàng tồn kho" : "Nhập hàng thủ công"}
-                </h3>
-                <div style={styles.muted}>
-                  {inventoryForm.id ? "Đang thay đổi số lượng tồn kho trực tiếp" : "Kho ban đầu trống, tự thêm tên hàng"}
-                </div>
+                <h3 style={styles.sectionTitle}>Nhập hàng thủ công</h3>
+                <div style={styles.muted}>Kho ban đầu trống, tự thêm tên hàng</div>
               </div>
 
-              <form onSubmit={handleSaveInventory} style={styles.stackForm}>
+              <form onSubmit={handleImportStock} style={styles.stackForm}>
                 <input
                   style={styles.compactInput}
                   placeholder="Tên hàng"
@@ -1744,7 +1685,7 @@ export default function App() {
                 <input
                   style={styles.compactInput}
                   type="number"
-                  placeholder={inventoryForm.id ? "Số lượng tồn hiện tại" : "Số lượng nhập"}
+                  placeholder="Số lượng nhập"
                   value={inventoryForm.qty}
                   onChange={(e) =>
                     setInventoryForm((prev) => ({ ...prev, qty: e.target.value }))
@@ -1761,26 +1702,9 @@ export default function App() {
                   }
                 />
 
-                <div style={styles.buttonGrid2}>
-                  <button type="submit" style={styles.primaryBtn}>
-                    {inventoryForm.id ? "Cập nhật" : "Thêm / nhập hàng"}
-                  </button>
-                  <button
-                    type="button"
-                    style={styles.secondaryBtn}
-                    onClick={() =>
-                      setInventoryForm({
-                        id: "",
-                        name: "",
-                        unit: "",
-                        qty: "",
-                        cost: "",
-                      })
-                    }
-                  >
-                    Làm mới
-                  </button>
-                </div>
+                <button type="submit" style={styles.primaryBtn}>
+                  Thêm / nhập hàng
+                </button>
               </form>
 
               <div style={{ marginTop: 18 }}>
@@ -1811,49 +1735,41 @@ export default function App() {
                 <h3 style={styles.sectionTitle}>Tồn kho hiện tại</h3>
               </div>
 
-              {/* Tách riêng khối layout để hiển thị responsive đẹp mắt hơn trên Mobile */}
-              <div style={styles.inventoryMobileList}>
-                {inventory.length === 0 ? (
-                  <div style={styles.emptyState}>Kho đang trống. Anh hãy tự thêm hàng.</div>
-                ) : (
-                  inventory.map((item) => (
-                    <div key={item.id} style={styles.inventoryMobileCard}>
-                      <div style={styles.invMobileMain}>
-                        <div style={styles.invMobileTitle}>{item.name}</div>
-                        <div style={styles.invMobileMeta}>
-                          Giá nhập: <strong>{formatMoney(item.cost)}đ</strong> • ĐVT: <strong>{item.unit}</strong>
-                        </div>
-                      </div>
-                      <div style={styles.invMobileStockAction}>
-                        <div
-                          style={{
-                            color: Number(item.stock) <= 10 ? "#c62828" : "#2e7d32",
-                            fontWeight: 800,
-                            fontSize: 18,
-                            textAlign: "right"
-                          }}
-                        >
-                          {formatMoney(item.stock)} {item.unit}
-                        </div>
-                        <div style={styles.invMobileBtns}>
-                          <button
-                            style={styles.smallActionBtn}
-                            onClick={() => editInventoryItem(item)}
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            style={styles.smallActionBtnDanger}
-                            onClick={() => deleteInventoryItem(item.id)}
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div style={styles.tableHeader5}>
+                <div>Tên hàng</div>
+                <div>Tồn</div>
+                <div>ĐVT</div>
+                <div>Giá nhập</div>
+                <div>Thao tác</div>
               </div>
+
+              {inventory.length === 0 ? (
+                <div style={styles.emptyState}>Kho đang trống. Anh hãy tự thêm hàng.</div>
+              ) : (
+                inventory.map((item) => (
+                  <div key={item.id} style={styles.tableRow5}>
+                    <div>{item.name}</div>
+                    <div
+                      style={{
+                        color: Number(item.stock) <= 10 ? "#c62828" : "#2c1c14",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formatMoney(item.stock)}
+                    </div>
+                    <div>{item.unit}</div>
+                    <div>{formatMoney(item.cost)}</div>
+                    <div>
+                      <button
+                        style={styles.smallActionBtnDanger}
+                        onClick={() => deleteInventoryItem(item.id)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </section>
           </div>
         )}
@@ -1953,7 +1869,7 @@ export default function App() {
                       </button>
                       <button
                         style={styles.smallActionBtnDanger}
-                        onClick={() => deleteStaff(staff.id)}
+                        onClick={() => deleteStaff(staffId)}
                       >
                         Xóa
                       </button>
@@ -2162,7 +2078,6 @@ const styles = {
     display: "flex",
     background: "#efeae6",
     fontFamily: "Arial, sans-serif",
-    flexWrap: "wrap",
   },
   notificationWrap: {
     position: "fixed",
@@ -2261,7 +2176,6 @@ const styles = {
     flex: 1,
     padding: 24,
     boxSizing: "border-box",
-    minWidth: 320,
   },
   headerBar: {
     background: "#f8f4f1",
@@ -2273,7 +2187,6 @@ const styles = {
     marginBottom: 20,
     boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
     gap: 12,
-    flexWrap: "wrap",
   },
   headerTitle: {
     fontSize: 28,
@@ -2299,12 +2212,12 @@ const styles = {
   },
   salesLayout: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gridTemplateColumns: "1fr 1.2fr 1fr",
     gap: 20,
   },
   twoCol: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+    gridTemplateColumns: "0.95fr 1.25fr",
     gap: 20,
   },
   card: {
@@ -2312,7 +2225,6 @@ const styles = {
     borderRadius: 24,
     padding: 20,
     boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
-    height: "fit-content",
   },
   sectionTop: {
     display: "flex",
@@ -2417,7 +2329,6 @@ const styles = {
     fontSize: 15,
     boxSizing: "border-box",
     background: "#fff",
-    width: "100%",
   },
   orderList: {
     background: "#fff",
@@ -2534,6 +2445,12 @@ const styles = {
     fontWeight: 700,
     cursor: "pointer",
   },
+  // Style mới bọc ngoài phần Menu Grid để tạo thanh cuộn thu gọn gọn gàng
+  menuScrollContainer: {
+    maxHeight: 520,
+    overflowY: "auto",
+    paddingRight: 6, // Khoảng đệm để thanh cuộn không đè sát nút bấm
+  },
   menuGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
@@ -2627,6 +2544,28 @@ const styles = {
     cursor: "pointer",
     fontWeight: 700,
   },
+  tableHeader5: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr 100px",
+    gap: 10,
+    padding: 14,
+    background: "#f1e5dc",
+    borderRadius: 16,
+    fontWeight: 800,
+    color: "#241816",
+    marginBottom: 8,
+  },
+  tableRow5: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr 1fr 1fr 100px",
+    gap: 10,
+    padding: 14,
+    background: "#fff",
+    borderRadius: 14,
+    marginBottom: 8,
+    border: "1px solid #e8ddd6",
+    alignItems: "center",
+  },
   billCard: {
     background: "#fff",
     border: "1px solid #e8ddd6",
@@ -2657,7 +2596,7 @@ const styles = {
   },
   reportGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: 18,
   },
   reportCard: {
@@ -2679,47 +2618,4 @@ const styles = {
     fontWeight: 800,
     color: "#9a430a",
   },
-  
-  // Các style bổ sung tối ưu riêng cho danh sách Kho trên Điện thoại (Mobile)
-  inventoryMobileList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-    maxHeight: 650,
-    overflowY: "auto"
-  },
-  inventoryMobileCard: {
-    background: "#fff",
-    border: "1px solid #e8ddd6",
-    borderRadius: 16,
-    padding: 14,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10
-  },
-  invMobileMain: {
-    flex: 1
-  },
-  invMobileTitle: {
-    fontWeight: 700,
-    fontSize: 16,
-    color: "#241816"
-  },
-  invMobileMeta: {
-    fontSize: 13,
-    color: "#7d6f67",
-    marginTop: 4
-  },
-  invMobileStockAction: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 8,
-    minWidth: 100
-  },
-  invMobileBtns: {
-    display: "flex",
-    gap: 6
-  }
 };
